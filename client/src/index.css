@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+  --nvidia-green: #76B900;
+  --nvidia-green-dark: #5a8f00;
+  --nvidia-green-light: #8ed600;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #f8f9fa;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Gantt chart styles */
+.gantt-container {
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+/* Status badges */
+.status-done { background-color: #dcfce7; color: #166534; }
+.status-progress { background-color: #fef3c7; color: #92400e; }
+.status-blocked { background-color: #fee2e2; color: #991b1b; }
+.status-todo { background-color: #f3f4f6; color: #374151; }
+
+/* Expandable rows */
+.expand-enter {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+.expand-enter-active {
+  max-height: 2000px;
+  opacity: 1;
+}
