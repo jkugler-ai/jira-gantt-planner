@@ -16,15 +16,15 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Install dependencies if needed
-if not exist "node_modules" (
+:: Install all dependencies if needed
+if not exist "server\node_modules" (
     echo  Installing dependencies (first time only)...
-    call npm install
+    call npm run install:all
     echo.
 )
 
 :: Build frontend if needed
-if not exist "dist" (
+if not exist "client\dist" (
     echo  Building frontend (first time only)...
     call npm run build
     echo.
@@ -40,4 +40,4 @@ echo.
 start "" cmd /c "timeout /t 3 /noq >nul && start http://localhost:4201"
 
 :: Start the server
-node server.js
+npm start
