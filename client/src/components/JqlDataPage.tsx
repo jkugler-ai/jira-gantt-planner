@@ -11,7 +11,6 @@ interface JqlDataPageProps {
   title: string
   subtitle?: string
   defaultJql: string
-  feedsDownstream?: boolean
 }
 
 interface JiraIssue {
@@ -56,7 +55,7 @@ function StatusBadge({ status, category }: { status: string; category: string })
   )
 }
 
-export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feedsDownstream = false }: JqlDataPageProps) {
+export default function JqlDataPage({ pageId, title, subtitle, defaultJql }: JqlDataPageProps) {
   const [jql, setJql] = useState('')
   const [jqlInput, setJqlInput] = useState('')
   const [issues, setIssues] = useState<JiraIssue[]>([])
@@ -75,7 +74,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
   const [productManagerFilter, setProductManagerFilter] = useState<string[]>([])
   const [engPicFilter, setEngPicFilter] = useState<string[]>([])
 
-  const { setActiveDataset } = useFilterContext()
+  const { setPageDataset } = useFilterContext()
   const { queries, save, remove } = useSavedQueries(pageId)
 
   // Initialize JQL from saved default or page default
@@ -115,13 +114,11 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
     })
   }, [issues])
 
-  // Update downstream when issues or filters change
+  // Update downstream dataset for this page whenever issues or filters change
   useEffect(() => {
-    if (feedsDownstream) {
-      const filtered = applyClientFilters(issues)
-      setActiveDataset(filtered as FilteredIssue[])
-    }
-  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, feedsDownstream])
+    const filtered = applyClientFilters(issues)
+    setPageDataset(pageId, filtered as FilteredIssue[])
+  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter])
 
   // Fetch filter options
   useEffect(() => {
@@ -302,11 +299,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
         <div className="flex items-center gap-2 mb-3">
           <Filter className="w-4 h-4 text-gray-400" />
           <span className="text-sm font-medium text-gray-700">Quick Filters</span>
-          {feedsDownstream && (
-            <span className="ml-auto text-xs text-[#76B900] font-medium">
-              ● Feeds Gantt / Calendar / Dependencies / Email ({filteredIssues.length} items)
-            </span>
-          )}
+          <span className="ml-auto text-xs text-[#76B900] font-medium">
+            ● Feeds Calendar / Gantt / Dependencies / Email ({filteredIssues.length} items)
+          </span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <MultiSelect

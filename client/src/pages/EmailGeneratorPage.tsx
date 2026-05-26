@@ -26,7 +26,8 @@ export default function EmailGeneratorPage() {
           <div>
             <p className="text-amber-800 font-medium">No active dataset</p>
             <p className="text-amber-600 text-sm mt-1">
-              Go to the Stories page, run a JQL query, and the results will feed into this view.
+              Navigate to any data page (Stories, Releases, Sprint Goals, Bugs) and run a query.
+              All results will feed into this email generator.
             </p>
           </div>
         </div>

@@ -7,10 +7,25 @@ interface CalendarEvent {
   key: string
   summary: string
   date: string
-  type: 'start' | 'due'
+  dateType: 'start' | 'due'
+  issueType: string
   status: string
   statusCategory: string
   assignee: string
+}
+
+const typeColors: Record<string, { bg: string; text: string; border: string }> = {
+  Release: { bg: 'bg-purple-100', text: 'text-purple-800', border: 'border-purple-300' },
+  'Sprint Goal': { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
+  Story: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
+  Bug: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+}
+
+const defaultTypeColor = { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' }
+
+const dateTypeIcons: Record<string, string> = {
+  start: '▶',
+  due: '◼',
 }
 
 export default function CalendarPage() {
@@ -26,8 +41,8 @@ export default function CalendarPage() {
           <div>
             <p className="text-amber-800 font-medium">No active dataset</p>
             <p className="text-amber-600 text-sm mt-1">
-              Expand sprint goals on the Sprint Goals page to populate data for this view.
-              The Calendar will display dates from the user stories you've expanded there.
+              Navigate to any data page (Stories, Releases, Sprint Goals, Bugs) and run a query.
+              All results will appear here automatically.
             </p>
           </div>
         </div>
@@ -43,7 +58,8 @@ export default function CalendarPage() {
         key: item.key,
         summary: item.summary,
         date: item.startDate,
-        type: 'start',
+        dateType: 'start',
+        issueType: item.type || 'Story',
         status: item.status,
         statusCategory: item.statusCategory,
         assignee: item.assignee
@@ -54,7 +70,8 @@ export default function CalendarPage() {
         key: item.key,
         summary: item.summary,
         date: item.dueDate,
-        type: 'due',
+        dateType: 'due',
+        issueType: item.type || 'Story',
         status: item.status,
         statusCategory: item.statusCategory,
         assignee: item.assignee
@@ -72,14 +89,10 @@ export default function CalendarPage() {
     return events.filter(e => e.date === dateStr)
   }
 
-  const typeColors: Record<string, string> = {
-    start: 'bg-blue-100 text-blue-700 border-blue-200',
-    due: 'bg-red-100 text-red-700 border-red-200',
-  }
-
-  const typeLabels: Record<string, string> = {
-    start: '▶',
-    due: '◼',
+  // Sort: Releases first, then Sprint Goals, then others
+  function sortEvents(evs: CalendarEvent[]): CalendarEvent[] {
+    const priority: Record<string, number> = { Release: 0, 'Sprint Goal': 1, Story: 2, Bug: 3 }
+    return evs.sort((a, b) => (priority[a.issueType] ?? 4) - (priority[b.issueType] ?? 4))
   }
 
   return (
@@ -88,7 +101,7 @@ export default function CalendarPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Showing dates from {activeDataset.length} stories in active dataset
+            Showing dates from {activeDataset.length} items across all data pages
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -118,35 +131,39 @@ export default function CalendarPage() {
         <div className="grid grid-cols-7">
           {/* Empty cells for days before month start */}
           {Array.from({ length: startDay }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-28 border-b border-r border-gray-100 bg-gray-50/50"></div>
+            <div key={`empty-${i}`} className="h-32 border-b border-r border-gray-100 bg-gray-50/50"></div>
           ))}
 
           {days.map(day => {
-            const dayEvents = getEventsForDay(day)
+            const dayEvents = sortEvents(getEventsForDay(day))
             const today = isToday(day)
             return (
               <div
                 key={day.toISOString()}
-                className={`h-28 border-b border-r border-gray-100 p-1 overflow-hidden ${today ? 'bg-[#76B900]/5' : 'hover:bg-gray-50'}`}
+                className={`h-32 border-b border-r border-gray-100 p-1 overflow-hidden ${today ? 'bg-[#76B900]/5' : 'hover:bg-gray-50'}`}
               >
                 <div className={`text-xs font-medium mb-1 px-1 ${today ? 'text-[#76B900] font-bold' : 'text-gray-600'}`}>
                   {format(day, 'd')}
                 </div>
-                <div className="space-y-0.5 overflow-y-auto max-h-20">
-                  {dayEvents.slice(0, 4).map((ev, i) => (
-                    <a
-                      key={`${ev.key}-${ev.type}-${i}`}
-                      href={`https://jirasw.nvidia.com/browse/${ev.key}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`block px-1.5 py-0.5 rounded text-[10px] truncate border ${typeColors[ev.type]} hover:opacity-80`}
-                      title={`${typeLabels[ev.type]} ${ev.key}: ${ev.summary} (${ev.assignee})`}
-                    >
-                      {typeLabels[ev.type]} {ev.key}
-                    </a>
-                  ))}
-                  {dayEvents.length > 4 && (
-                    <div className="text-[10px] text-gray-400 px-1">+{dayEvents.length - 4} more</div>
+                <div className="space-y-0.5 overflow-y-auto max-h-24">
+                  {dayEvents.slice(0, 5).map((ev, i) => {
+                    const colors = typeColors[ev.issueType] || defaultTypeColor
+                    const isRelease = ev.issueType === 'Release'
+                    return (
+                      <a
+                        key={`${ev.key}-${ev.dateType}-${i}`}
+                        href={`https://jirasw.nvidia.com/browse/${ev.key}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`block px-1.5 py-0.5 rounded text-[10px] truncate border ${colors.bg} ${colors.text} ${colors.border} hover:opacity-80 ${isRelease ? 'font-bold' : ''}`}
+                        title={`${dateTypeIcons[ev.dateType]} ${ev.issueType} | ${ev.key}: ${ev.summary} (${ev.assignee})`}
+                      >
+                        {isRelease ? '🚀 ' : dateTypeIcons[ev.dateType] + ' '}{ev.key} {ev.summary.length > 15 ? ev.summary.slice(0, 15) + '…' : ev.summary}
+                      </a>
+                    )
+                  })}
+                  {dayEvents.length > 5 && (
+                    <div className="text-[10px] text-gray-400 px-1">+{dayEvents.length - 5} more</div>
                   )}
                 </div>
               </div>
@@ -158,10 +175,20 @@ export default function CalendarPage() {
       {/* Legend */}
       <div className="mt-4 flex items-center gap-6 text-xs text-gray-500">
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div> Start Date
+          <div className="w-3 h-3 rounded bg-purple-100 border border-purple-300"></div> Release
         </div>
         <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-red-100 border border-red-200"></div> Due Date
+          <div className="w-3 h-3 rounded bg-indigo-100 border border-indigo-300"></div> Sprint Goal
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded bg-blue-100 border border-blue-200"></div> Story
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded bg-red-100 border border-red-200"></div> Bug
+        </div>
+        <div className="ml-4 flex items-center gap-2">
+          <span>▶ Start</span>
+          <span>◼ Due</span>
         </div>
       </div>
     </div>

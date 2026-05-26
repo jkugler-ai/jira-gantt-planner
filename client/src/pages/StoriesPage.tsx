@@ -5,9 +5,8 @@ export default function StoriesPage() {
     <JqlDataPage
       pageId="stories"
       title="User Stories"
-      subtitle="Feeds Gantt, Calendar, Dependencies & Email views"
+      subtitle="User stories from OMPE"
       defaultJql='project = OMPE AND issuetype = Story AND status != Done ORDER BY cf[13210] ASC, priority ASC'
-      feedsDownstream={true}
     />
   )
 }

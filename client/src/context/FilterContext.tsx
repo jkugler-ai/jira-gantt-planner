@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useCallback, useMemo } from 'react'
 import type { ReactNode } from 'react'
 
 export interface FilteredIssue {
@@ -17,45 +17,62 @@ export interface FilteredIssue {
   devTeam: string | null
   programManager: string | null
   productManager: string | null
+  engPic?: string | null
   links: any[]
 }
 
 interface FilterContextType {
+  // Combined dataset from all pages
   activeDataset: FilteredIssue[]
+  // Per-page datasets
+  pageDatasets: Record<string, FilteredIssue[]>
+  // Set data for a specific page
+  setPageDataset: (pageId: string, issues: FilteredIssue[]) => void
+  // Clear a page's data
+  clearPageDataset: (pageId: string) => void
+  // Legacy: set the whole dataset directly
   setActiveDataset: (issues: FilteredIssue[]) => void
-  addToDataset: (issues: FilteredIssue[]) => void
-  removeFromDataset: (keys: string[]) => void
-  clearDataset: () => void
 }
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined)
 
 export function FilterProvider({ children }: { children: ReactNode }) {
-  const [activeDataset, setActiveDatasetState] = useState<FilteredIssue[]>([])
+  const [pageDatasets, setPageDatasets] = useState<Record<string, FilteredIssue[]>>({})
 
-  const setActiveDataset = (issues: FilteredIssue[]) => {
-    setActiveDatasetState(issues)
-  }
+  const setPageDataset = useCallback((pageId: string, issues: FilteredIssue[]) => {
+    setPageDatasets(prev => ({ ...prev, [pageId]: issues }))
+  }, [])
 
-  const addToDataset = (issues: FilteredIssue[]) => {
-    setActiveDatasetState(prev => {
-      const existingKeys = new Set(prev.map(i => i.key))
-      const newIssues = issues.filter(i => !existingKeys.has(i.key))
-      return [...prev, ...newIssues]
+  const clearPageDataset = useCallback((pageId: string) => {
+    setPageDatasets(prev => {
+      const next = { ...prev }
+      delete next[pageId]
+      return next
     })
-  }
+  }, [])
 
-  const removeFromDataset = (keys: string[]) => {
-    const keySet = new Set(keys)
-    setActiveDatasetState(prev => prev.filter(i => !keySet.has(i.key)))
-  }
+  // Merge all page datasets, deduplicating by key
+  const activeDataset = useMemo(() => {
+    const seen = new Set<string>()
+    const merged: FilteredIssue[] = []
+    Object.values(pageDatasets).forEach(issues => {
+      issues.forEach(issue => {
+        if (!seen.has(issue.key)) {
+          seen.add(issue.key)
+          merged.push(issue)
+        }
+      })
+    })
+    return merged
+  }, [pageDatasets])
 
-  const clearDataset = () => {
-    setActiveDatasetState([])
-  }
+  // Legacy support
+  const setActiveDataset = useCallback((issues: FilteredIssue[]) => {
+    setPageDatasets(prev => ({ ...prev, _legacy: issues }))
+  }, [])
 
   return (
-    <FilterContext.Provider value={{ activeDataset, setActiveDataset, addToDataset, removeFromDataset, clearDataset }}>
+    <FilterContext.Provider value={{ activeDataset, pageDatasets, setPageDataset, clearPageDataset, setActiveDataset }}>
       {children}
     </FilterContext.Provider>
   )

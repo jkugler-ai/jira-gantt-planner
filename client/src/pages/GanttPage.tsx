@@ -22,8 +22,8 @@ export default function GanttPage() {
           <div>
             <p className="text-amber-800 font-medium">No active dataset</p>
             <p className="text-amber-600 text-sm mt-1">
-              Expand sprint goals on the Sprint Goals page to populate data for this view.
-              The Gantt chart will display the user stories you've expanded there.
+              Navigate to any data page (Stories, Releases, Sprint Goals, Bugs) and run a query.
+              All results will appear here automatically.
             </p>
           </div>
         </div>
