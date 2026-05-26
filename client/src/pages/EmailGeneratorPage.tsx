@@ -95,6 +95,29 @@ export default function EmailGeneratorPage() {
 
       const jiraLink = (key: string, text?: string) => `<a href="https://jirasw.nvidia.com/browse/${key}" target="_blank" style="color: #76B900; text-decoration: none; font-weight: 600;">${text || key}</a>`
 
+      // Convert Jira wiki markup to HTML
+      const jiraMarkupToHtml = (text: string): string => {
+        if (!text) return ''
+        let html = text
+        // {color:#hex}text{color} → colored span
+        html = html.replace(/\{color:([^}]+)\}(.*?)\{color\}/g, '<span style="color:$1; font-weight: 600;">$2</span>')
+        // {*}text{*} → bold
+        html = html.replace(/\{\*\}(.*?)\{\*\}/g, '<strong>$1</strong>')
+        // *text* → bold (but not inside URLs)
+        html = html.replace(/(?<![\w\/])\*([^*\n]+)\*(?![\w])/g, '<strong>$1</strong>')
+        // [text|url] → link
+        html = html.replace(/\[([^|\]]+)\|([^\]]+)\]/g, '<a href="$2" target="_blank" style="color: #76B900;">$1</a>')
+        // [url] → link
+        html = html.replace(/\[([^\]]+)\]/g, '<a href="$1" target="_blank" style="color: #76B900;">$1</a>')
+        // {noformat} blocks
+        html = html.replace(/\{noformat\}(.*?)\{noformat\}/gs, '<code>$1</code>')
+        // Remove remaining {markup} tags
+        html = html.replace(/\{[^}]+\}/g, '')
+        // Convert OMPE-XXXXX references to links
+        html = html.replace(/\b(OMPE-\d+)\b/g, '<a href="https://jirasw.nvidia.com/browse/$1" target="_blank" style="color: #76B900; font-weight: 600;">$1</a>')
+        return html
+      }
+
       const html = `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 0 auto; background: white; padding: 32px;">
   <!-- Header -->
@@ -133,7 +156,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">Status Updates</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${statusUpdates.slice(0, 10).map(s => `<li>${jiraLink(s.key)}: ${s.update.substring(0, 150)}${s.update.length > 150 ? '...' : ''} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
+      ${statusUpdates.slice(0, 10).map(s => `<li>${jiraLink(s.key)}: ${jiraMarkupToHtml(s.update)} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
@@ -173,7 +196,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #0369a1; margin: 0 0 8px;">Recent Comments (Last 7 Days)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allComments.slice(0, 8).map(c => `<li>${jiraLink(c.key)}: &ldquo;${c.body.substring(0, 100)}${c.body.length > 100 ? '...' : ''}&rdquo; <span style="color: #6b7280;">&mdash; ${c.author}</span></li>`).join('')}
+      ${allComments.slice(0, 8).map(c => `<li>${jiraLink(c.key)}: ${jiraMarkupToHtml(c.body)} <span style="color: #6b7280;">&mdash; ${c.author}</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
@@ -182,7 +205,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">New Links &amp; MRs (Last 7 Days)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allLinkChanges.slice(0, 8).map(l => `<li>${jiraLink(l.key)}: ${l.to ? `Linked to: ${l.to}` : `Removed: ${l.from}`}</li>`).join('')}
+      ${allLinkChanges.slice(0, 8).map(l => `<li>${jiraLink(l.key)}: ${l.to ? `Linked to: ${jiraMarkupToHtml(l.to)}` : `Removed: ${jiraMarkupToHtml(l.from || '')}`}</li>`).join('')}
     </ul>
   </div>` : ''}
 
