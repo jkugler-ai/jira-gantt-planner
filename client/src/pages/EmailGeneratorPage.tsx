@@ -56,10 +56,10 @@ export default function EmailGeneratorPage() {
       // Overall health
       const totalActive = inProgress.length + toDo.length
       const overdueRatio = totalActive > 0 ? overdue.length / totalActive : 0
-      let healthStatus = '🟢 On Track'
+      let healthStatus = 'On Track'
       let healthColor = '#166534'
-      if (overdueRatio > 0.3) { healthStatus = '🔴 At Risk'; healthColor = '#991b1b'; }
-      else if (overdueRatio > 0.1 || overdue.length > 2) { healthStatus = '🟡 Needs Attention'; healthColor = '#92400e'; }
+      if (overdueRatio > 0.3) { healthStatus = 'At Risk'; healthColor = '#991b1b'; }
+      else if (overdueRatio > 0.1 || overdue.length > 2) { healthStatus = 'Needs Attention'; healthColor = '#92400e'; }
 
       // Overbooked detection
       const assigneeCounts: Record<string, number> = {}
@@ -93,6 +93,8 @@ export default function EmailGeneratorPage() {
 
       const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
+      const jiraLink = (key: string, text?: string) => `<a href="https://jirasw.nvidia.com/browse/${key}" target="_blank" style="color: #76B900; text-decoration: none; font-weight: 600;">${text || key}</a>`
+
       const html = `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 0 auto; background: white; padding: 32px;">
   <!-- Header -->
@@ -106,7 +108,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid ${healthColor};">
     <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 700; color: ${healthColor};">${healthStatus}</h2>
     <p style="margin: 0; font-size: 13px; color: #374151;">
-      ${done.length} completed • ${inProgress.length} in progress • ${toDo.length} to do • ${overdue.length} overdue
+      ${done.length} completed &bull; ${inProgress.length} in progress &bull; ${toDo.length} to do &bull; ${overdue.length} overdue
     </p>
   </div>
 
@@ -126,93 +128,77 @@ export default function EmailGeneratorPage() {
     </div>
   </div>
 
-  <!-- Status Updates (from Jira field) -->
+  <!-- Status Updates -->
   ${statusUpdates.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">
-      📋 Status Updates
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">Status Updates</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${statusUpdates.slice(0, 10).map(s => `<li><strong>${s.key}</strong>: ${s.update.substring(0, 150)}${s.update.length > 150 ? '...' : ''} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
+      ${statusUpdates.slice(0, 10).map(s => `<li>${jiraLink(s.key)}: ${s.update.substring(0, 150)}${s.update.length > 150 ? '...' : ''} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
   <!-- Important Upcoming Dates -->
   ${upcomingDue.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #7c3aed; margin: 0 0 8px;">
-      📅 Important Dates (Next 2 Weeks)
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #7c3aed; margin: 0 0 8px;">Important Dates (Next 2 Weeks)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${upcomingDue.sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()).slice(0, 10).map(i => `<li><strong>${i.key}</strong>: ${i.summary} — <span style="color: #7c3aed;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
+      ${upcomingDue.sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()).slice(0, 10).map(i => `<li>${jiraLink(i.key)}: ${i.summary} &mdash; <span style="color: #7c3aed; font-weight: 600;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
   <!-- Risks & Overdue -->
   ${overdue.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #991b1b; margin: 0 0 8px;">
-      🔴 Overdue / At Risk
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #991b1b; margin: 0 0 8px;">Overdue / At Risk</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${overdue.slice(0, 8).map(i => `<li><strong>${i.key}</strong>: ${i.summary} — <span style="color: #991b1b;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
+      ${overdue.slice(0, 8).map(i => `<li>${jiraLink(i.key)}: ${i.summary} &mdash; <span style="color: #991b1b; font-weight: 600;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
     </ul>
   </div>` : `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px;">
-      🟢 No Overdue Items
-    </h2>
-    <p style="color: #6b7280; font-size: 13px; margin: 0;">All tracked items are on schedule. 🎉</p>
+    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px;">No Overdue Items</h2>
+    <p style="color: #6b7280; font-size: 13px; margin: 0;">All tracked items are on schedule.</p>
   </div>`}
 
   <!-- Resource Concerns -->
   ${overbooked.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #92400e; margin: 0 0 8px;">
-      🟡 Resource Concerns
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #92400e; margin: 0 0 8px;">Resource Concerns</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${overbooked.map(([name, count]) => `<li><strong>${name}</strong> — ${count} active items (potential overallocation)</li>`).join('')}
+      ${overbooked.map(([name, count]) => `<li><strong>${name}</strong> &mdash; ${count} active items (potential overallocation)</li>`).join('')}
     </ul>
   </div>` : ''}
 
   <!-- Recent Activity (Comments) -->
   ${allComments.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #0369a1; margin: 0 0 8px;">
-      💬 Recent Comments (Last 7 Days)
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #0369a1; margin: 0 0 8px;">Recent Comments (Last 7 Days)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allComments.slice(0, 8).map(c => `<li><strong>${c.key}</strong>: "${c.body.substring(0, 100)}${c.body.length > 100 ? '...' : ''}" <span style="color: #6b7280;">— ${c.author}</span></li>`).join('')}
+      ${allComments.slice(0, 8).map(c => `<li>${jiraLink(c.key)}: &ldquo;${c.body.substring(0, 100)}${c.body.length > 100 ? '...' : ''}&rdquo; <span style="color: #6b7280;">&mdash; ${c.author}</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
   <!-- New Links/MRs -->
   ${allLinkChanges.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">
-      🔗 New Links & MRs (Last 7 Days)
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">New Links &amp; MRs (Last 7 Days)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allLinkChanges.slice(0, 8).map(l => `<li><strong>${l.key}</strong>: ${l.to ? `Added: ${l.to}` : `Removed: ${l.from}`}</li>`).join('')}
+      ${allLinkChanges.slice(0, 8).map(l => `<li>${jiraLink(l.key)}: ${l.to ? `Linked to: ${l.to}` : `Removed: ${l.from}`}</li>`).join('')}
     </ul>
   </div>` : ''}
 
   <!-- Wins -->
   ${done.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px;">
-      🟢 Completed
-    </h2>
+    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px;">Completed</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${done.slice(0, 8).map(i => `<li><strong>${i.key}</strong>: ${i.summary} <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
+      ${done.slice(0, 8).map(i => `<li>${jiraLink(i.key)}: ${i.summary} <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
   <!-- Footer -->
   <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px;">
     <p style="margin: 0; color: #9ca3af; font-size: 11px; text-align: center;">
-      Generated by Mission Control • OMPE Program Management Dashboard<br/>
+      Generated by Mission Control &bull; OMPE Program Management Dashboard<br/>
       Program Manager: Jen Kugler | Data sourced from Jira (OMPE)
     </p>
   </div>
