@@ -16,19 +16,20 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Install all dependencies if needed
-if not exist "server\node_modules" (
-    echo  Installing dependencies (first time only)...
-    call npm run install:all
-    echo.
-)
+:: Pull latest code
+echo  Pulling latest code...
+git pull
+echo.
 
-:: Build frontend if needed
-if not exist "client\dist" (
-    echo  Building frontend (first time only)...
-    call npm run build
-    echo.
-)
+:: Install all dependencies
+echo  Installing dependencies...
+call npm run install:all
+echo.
+
+:: Build frontend
+echo  Building frontend...
+call npm run build
+echo.
 
 echo  Starting server on http://localhost:4201
 echo  Opening browser in 3 seconds...
