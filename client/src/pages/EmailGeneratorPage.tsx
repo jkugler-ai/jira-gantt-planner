@@ -7,6 +7,7 @@ interface IssueDetail {
   key: string
   recentComments: { author: string; body: string; created: string }[]
   recentChanges: { author: string; date: string; field: string; from: string | null; to: string | null }[]
+  linkedTitles: Record<string, string>
 }
 
 export default function EmailGeneratorPage() {
@@ -77,7 +78,7 @@ export default function EmailGeneratorPage() {
 
       // Collect recent comments across all issues
       const allComments: { key: string; summary: string; author: string; body: string }[] = []
-      const allLinkChanges: { key: string; summary: string; to: string | null; from: string | null }[] = []
+      const allLinkChanges: { key: string; summary: string; to: string | null; from: string | null; linkedTitles: Record<string, string> }[] = []
 
       items.forEach(item => {
         const detail = details[item.key]
@@ -86,7 +87,7 @@ export default function EmailGeneratorPage() {
             allComments.push({ key: item.key, summary: item.summary, author: c.author, body: c.body })
           })
           detail.recentChanges.forEach(ch => {
-            allLinkChanges.push({ key: item.key, summary: item.summary, to: ch.to, from: ch.from })
+            allLinkChanges.push({ key: item.key, summary: item.summary, to: ch.to, from: ch.from, linkedTitles: detail.linkedTitles || {} })
           })
         }
       })
@@ -205,21 +206,38 @@ export default function EmailGeneratorPage() {
   <!-- New Links/MRs -->
   ${allLinkChanges.length > 0 ? (() => {
     // Group link changes by parent key
-    const grouped: Record<string, { summary: string; changes: { to: string | null; from: string | null }[] }> = {};
+    const grouped: Record<string, { summary: string; linkedTitles: Record<string, string>; changes: { to: string | null; from: string | null }[] }> = {};
     allLinkChanges.forEach(l => {
-      if (!grouped[l.key]) grouped[l.key] = { summary: l.summary, changes: [] };
+      if (!grouped[l.key]) grouped[l.key] = { summary: l.summary, linkedTitles: l.linkedTitles, changes: [] };
       grouped[l.key].changes.push({ to: l.to, from: l.from });
     });
+
+    // Helper to format a link change with the linked issue's title
+    const formatChange = (text: string | null, titles: Record<string, string>, isRemoved: boolean): string => {
+      if (!text) return '';
+      const keyMatch = text.match(/([A-Z]+-\d+)/);
+      const linkedKey = keyMatch ? keyMatch[1] : null;
+      const linkedTitle = linkedKey && titles[linkedKey] ? titles[linkedKey] : '';
+      // Clean up relationship text (e.g., "This issue is contained in OMPE-94280")
+      let relationship = text.replace(/([A-Z]+-\d+)/, '').trim();
+      // Remove "This issue" prefix
+      relationship = relationship.replace(/^This issue\s*/i, '').trim();
+      const action = isRemoved ? 'Removed' : 'Linked';
+      if (linkedKey) {
+        return `${action}: ${relationship} ${jiraLink(linkedKey)}${linkedTitle ? ` &mdash; ${linkedTitle}` : ''}`;
+      }
+      return `${action}: ${text}`;
+    };
+
     return `
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">New Links &amp; MRs (Last 7 Days)</h2>
     ${Object.entries(grouped).slice(0, 10).map(([key, data]) => `
-    <div style="margin-bottom: 10px; padding-left: 12px; border-left: 3px solid #065f4620;">
+    <div style="margin-bottom: 12px; padding-left: 12px; border-left: 3px solid #065f4620;">
       <div style="font-size: 13px; font-weight: 600;">${jiraLink(key)} &mdash; ${data.summary}</div>
       <ol style="margin: 4px 0 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-        ${data.changes.map(ch => ch.to 
-          ? `<li>Linked to: ${jiraMarkupToHtml(ch.to)}</li>`
-          : `<li>Removed: ${jiraMarkupToHtml(ch.from || '')}</li>`
+        ${data.changes.map(ch => 
+          `<li>${formatChange(ch.to || ch.from, data.linkedTitles, !ch.to)}</li>`
         ).join('')}
       </ol>
     </div>`).join('')}

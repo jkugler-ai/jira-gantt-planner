@@ -365,7 +365,31 @@ router.get('/issue-details', requireAuth, async (req, res) => {
             }))
           );
 
-          return { key, recentComments, recentChanges };
+          // Extract linked issue keys from changelog to fetch their titles
+          const linkedKeys = new Set();
+          recentChanges.forEach(ch => {
+            const text = ch.to || ch.from || '';
+            const match = text.match(/([A-Z]+-\d+)/);
+            if (match) linkedKeys.add(match[1]);
+          });
+
+          // Fetch titles for linked issues
+          const linkedTitles = {};
+          if (linkedKeys.size > 0) {
+            try {
+              const keysJql = [...linkedKeys].map(k => `key = ${k}`).join(' OR ');
+              const titlesRes = await jiraRequest(req, 'GET',
+                `/search?jql=${encodeURIComponent(keysJql)}&maxResults=${linkedKeys.size}&fields=summary`
+              );
+              titlesRes.data.issues.forEach(i => {
+                linkedTitles[i.key] = i.fields.summary;
+              });
+            } catch (e) {
+              // silently continue without titles
+            }
+          }
+
+          return { key, recentComments, recentChanges, linkedTitles };
         } catch (err) {
           return { key, recentComments: [], recentChanges: [], error: true };
         }
