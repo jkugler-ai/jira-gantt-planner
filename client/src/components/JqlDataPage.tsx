@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search } from 'lucide-react'
 import MultiSelect from './MultiSelect'
-import UserSearch from './UserSearch'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { useSavedQueries, getDefaultQuery } from '../lib/savedQueries'
@@ -90,6 +89,31 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
   useEffect(() => {
     if (jql) fetchData()
   }, [jql])
+
+  // Build filter options from current results
+  useEffect(() => {
+    const assignees = new Set<string>()
+    const devTeams = new Set<string>()
+    const programManagers = new Set<string>()
+    const productManagers = new Set<string>()
+    const engPics = new Set<string>()
+
+    issues.forEach(issue => {
+      if (issue.assignee && issue.assignee !== 'Unassigned') assignees.add(issue.assignee)
+      if (issue.devTeam) devTeams.add(issue.devTeam)
+      if (issue.programManager) programManagers.add(issue.programManager)
+      if (issue.productManager) productManagers.add(issue.productManager)
+      if (issue.engPic) engPics.add(issue.engPic)
+    })
+
+    setFilterOptions({
+      assignees: [...assignees].sort(),
+      devTeams: [...devTeams].sort(),
+      programManagers: [...programManagers].sort(),
+      productManagers: [...productManagers].sort(),
+      engPics: [...engPics].sort()
+    })
+  }, [issues])
 
   // Update downstream when issues or filters change
   useEffect(() => {
@@ -291,8 +315,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
             selected={devTeamFilter}
             onChange={setDevTeamFilter}
           />
-          <UserSearch
+          <MultiSelect
             label="Assignee"
+            options={filterOptions.assignees}
             selected={assigneeFilter}
             onChange={setAssigneeFilter}
           />
