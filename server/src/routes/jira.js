@@ -325,6 +325,61 @@ router.get('/query', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/jira/issue-details - Get recent comments, links, and changelog for multiple issues
+router.get('/issue-details', requireAuth, async (req, res) => {
+  try {
+    const keys = req.query.keys;
+    if (!keys) return res.status(400).json({ error: 'keys param required' });
+    const keyList = Array.isArray(keys) ? keys : keys.split(',');
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    const details = {};
+    // Process in batches of 10 to avoid overwhelming Jira
+    for (let i = 0; i < keyList.length; i += 10) {
+      const batch = keyList.slice(i, i + 10);
+      const results = await Promise.all(batch.map(async (key) => {
+        try {
+          // Get comments
+          const commentsRes = await jiraRequest(req, 'GET', `/issue/${key}/comment`);
+          const recentComments = (commentsRes.data.comments || []).filter(c => 
+            c.created && c.created >= sevenDaysAgo
+          ).map(c => ({
+            author: c.author?.displayName || 'Unknown',
+            body: c.body ? c.body.substring(0, 300) : '',
+            created: c.created
+          }));
+
+          // Get changelog for link changes
+          const changelogRes = await jiraRequest(req, 'GET', `/issue/${key}?expand=changelog&fields=none`);
+          const recentChanges = (changelogRes.data.changelog?.histories || []).filter(h =>
+            h.created && h.created >= sevenDaysAgo
+          ).flatMap(h => 
+            (h.items || []).filter(item => 
+              item.field === 'Link' || item.field === 'RemoteIssueLink'
+            ).map(item => ({
+              author: h.author?.displayName || 'Unknown',
+              date: h.created,
+              field: item.field,
+              from: item.fromString || null,
+              to: item.toString || null
+            }))
+          );
+
+          return { key, recentComments, recentChanges };
+        } catch (err) {
+          return { key, recentComments: [], recentChanges: [], error: true };
+        }
+      }));
+      results.forEach(r => { details[r.key] = r; });
+    }
+
+    res.json({ details });
+  } catch (err) {
+    console.error('Issue details error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to fetch issue details' });
+  }
+});
+
 // GET /api/jira/transitions/:key - Get available transitions
 router.get('/transitions/:key', requireAuth, async (req, res) => {
   try {

@@ -1,6 +1,13 @@
 import { useState, useRef } from 'react'
-import { Copy, Check, Mail, AlertTriangle } from 'lucide-react'
+import axios from 'axios'
+import { Copy, Check, Mail, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useFilterContext } from '../context/FilterContext'
+
+interface IssueDetail {
+  key: string
+  recentComments: { author: string; body: string; created: string }[]
+  recentChanges: { author: string; date: string; field: string; from: string | null; to: string | null }[]
+}
 
 export default function EmailGeneratorPage() {
   const { activeDataset } = useFilterContext()
@@ -18,8 +25,7 @@ export default function EmailGeneratorPage() {
           <div>
             <p className="text-amber-800 font-medium">No active dataset</p>
             <p className="text-amber-600 text-sm mt-1">
-              Expand sprint goals on the Sprint Goals page to populate data for this view.
-              The Email Generator will create a status update based on the user stories you've expanded there.
+              Go to the Stories page, run a JQL query, and the results will feed into this view.
             </p>
           </div>
         </div>
@@ -27,34 +33,81 @@ export default function EmailGeneratorPage() {
     )
   }
 
-  function generateEmail() {
+  async function generateEmail() {
     setGenerating(true)
 
-    const items = activeDataset
+    try {
+      // Fetch detailed info (comments + link changes from last 7 days)
+      const keys = activeDataset.map(i => i.key).join(',')
+      const detailsRes = await axios.get('/api/jira/issue-details', { params: { keys } })
+      const details: Record<string, IssueDetail> = detailsRes.data.details
 
-    // Categorize items
-    const done = items.filter(i => i.statusCategory === 'done')
-    const inProgress = items.filter(i => i.statusCategory === 'indeterminate')
-    const overdue = items.filter(i => i.dueDate && new Date(i.dueDate) < new Date() && i.statusCategory !== 'done')
+      const items = activeDataset
+      const today = new Date()
+      const twoWeeksOut = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
 
-    // Detect overbooked people
-    const assigneeCounts: Record<string, number> = {}
-    inProgress.forEach(i => {
-      if (i.assignee && i.assignee !== 'Unassigned') {
-        assigneeCounts[i.assignee] = (assigneeCounts[i.assignee] || 0) + 1
-      }
-    })
-    const overbooked = Object.entries(assigneeCounts).filter(([_, count]) => count > 3)
+      // Categorize
+      const done = items.filter(i => i.statusCategory === 'done')
+      const inProgress = items.filter(i => i.statusCategory === 'indeterminate')
+      const toDo = items.filter(i => i.statusCategory === 'new')
+      const overdue = items.filter(i => i.dueDate && new Date(i.dueDate) < today && i.statusCategory !== 'done')
+      const upcomingDue = items.filter(i => i.dueDate && new Date(i.dueDate) >= today && new Date(i.dueDate) <= twoWeeksOut && i.statusCategory !== 'done')
 
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+      // Overall health
+      const totalActive = inProgress.length + toDo.length
+      const overdueRatio = totalActive > 0 ? overdue.length / totalActive : 0
+      let healthStatus = '🟢 On Track'
+      let healthColor = '#166534'
+      if (overdueRatio > 0.3) { healthStatus = '🔴 At Risk'; healthColor = '#991b1b'; }
+      else if (overdueRatio > 0.1 || overdue.length > 2) { healthStatus = '🟡 Needs Attention'; healthColor = '#92400e'; }
 
-    const html = `
+      // Overbooked detection
+      const assigneeCounts: Record<string, number> = {}
+      inProgress.forEach(i => {
+        if (i.assignee && i.assignee !== 'Unassigned') {
+          assigneeCounts[i.assignee] = (assigneeCounts[i.assignee] || 0) + 1
+        }
+      })
+      const overbooked = Object.entries(assigneeCounts).filter(([_, count]) => count > 3)
+
+      // Collect status updates
+      const statusUpdates = items
+        .filter(i => i.statusUpdate)
+        .map(i => ({ key: i.key, summary: i.summary, update: i.statusUpdate!, assignee: i.assignee }))
+
+      // Collect recent comments across all issues
+      const allComments: { key: string; summary: string; author: string; body: string }[] = []
+      const allLinkChanges: { key: string; summary: string; to: string | null; from: string | null }[] = []
+
+      items.forEach(item => {
+        const detail = details[item.key]
+        if (detail) {
+          detail.recentComments.forEach(c => {
+            allComments.push({ key: item.key, summary: item.summary, author: c.author, body: c.body })
+          })
+          detail.recentChanges.forEach(ch => {
+            allLinkChanges.push({ key: item.key, summary: item.summary, to: ch.to, from: ch.from })
+          })
+        }
+      })
+
+      const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+
+      const html = `
 <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 0 auto; background: white; padding: 32px;">
-  <!-- Header with NVIDIA logo -->
+  <!-- Header -->
   <div style="text-align: center; margin-bottom: 24px; padding-bottom: 20px; border-bottom: 3px solid #76B900;">
     <img src="https://www.nvidia.com/content/dam/en-zz/Solutions/about-nvidia/logo-and-brand/02-nvidia-logo-color-grn-500x200-4c25-p@2x.png" alt="NVIDIA" style="height: 40px; margin-bottom: 8px;" />
     <h1 style="margin: 0; color: #1a1a2e; font-size: 22px; font-weight: 700;">OMPE Program Status Update</h1>
-    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">${today}</p>
+    <p style="margin: 4px 0 0; color: #6b7280; font-size: 13px;">${todayStr}</p>
+  </div>
+
+  <!-- Overall Health -->
+  <div style="margin-bottom: 20px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid ${healthColor};">
+    <h2 style="margin: 0 0 4px; font-size: 16px; font-weight: 700; color: ${healthColor};">${healthStatus}</h2>
+    <p style="margin: 0; font-size: 13px; color: #374151;">
+      ${done.length} completed • ${inProgress.length} in progress • ${toDo.length} to do • ${overdue.length} overdue
+    </p>
   </div>
 
   <!-- Summary Stats -->
@@ -73,29 +126,46 @@ export default function EmailGeneratorPage() {
     </div>
   </div>
 
-  <!-- Wins -->
+  <!-- Status Updates (from Jira field) -->
+  ${statusUpdates.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px; display: flex; align-items: center;">
-      🟢 Wins & Completions
+    <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">
+      📋 Status Updates
     </h2>
-    ${done.length > 0 ? `
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${done.slice(0, 8).map(i => `<li><strong>${i.key}</strong>: ${i.summary} <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
-    </ul>` : '<p style="color: #6b7280; font-size: 13px; margin: 0;">No completions this period.</p>'}
-  </div>
+      ${statusUpdates.slice(0, 10).map(s => `<li><strong>${s.key}</strong>: ${s.update.substring(0, 150)}${s.update.length > 150 ? '...' : ''} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
+    </ul>
+  </div>` : ''}
 
-  <!-- Risks -->
+  <!-- Important Upcoming Dates -->
+  ${upcomingDue.length > 0 ? `
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 15px; font-weight: 700; color: #7c3aed; margin: 0 0 8px;">
+      📅 Important Dates (Next 2 Weeks)
+    </h2>
+    <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
+      ${upcomingDue.sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()).slice(0, 10).map(i => `<li><strong>${i.key}</strong>: ${i.summary} — <span style="color: #7c3aed;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
+    </ul>
+  </div>` : ''}
+
+  <!-- Risks & Overdue -->
+  ${overdue.length > 0 ? `
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #991b1b; margin: 0 0 8px;">
-      🔴 Risks & Misses
+      🔴 Overdue / At Risk
     </h2>
-    ${overdue.length > 0 ? `
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
       ${overdue.slice(0, 8).map(i => `<li><strong>${i.key}</strong>: ${i.summary} — <span style="color: #991b1b;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
-    </ul>` : '<p style="color: #6b7280; font-size: 13px; margin: 0;">No overdue items. 🎉</p>'}
-  </div>
+    </ul>
+  </div>` : `
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px;">
+      🟢 No Overdue Items
+    </h2>
+    <p style="color: #6b7280; font-size: 13px; margin: 0;">All tracked items are on schedule. 🎉</p>
+  </div>`}
 
-  <!-- Overbooked -->
+  <!-- Resource Concerns -->
   ${overbooked.length > 0 ? `
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #92400e; margin: 0 0 8px;">
@@ -106,15 +176,38 @@ export default function EmailGeneratorPage() {
     </ul>
   </div>` : ''}
 
-  <!-- In Progress Highlights -->
+  <!-- Recent Activity (Comments) -->
+  ${allComments.length > 0 ? `
   <div style="margin-bottom: 20px;">
-    <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">
-      🔵 Key Work In Progress
+    <h2 style="font-size: 15px; font-weight: 700; color: #0369a1; margin: 0 0 8px;">
+      💬 Recent Comments (Last 7 Days)
     </h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${inProgress.slice(0, 8).map(i => `<li><strong>${i.key}</strong>: ${i.summary} <span style="color: #6b7280;">(${i.assignee}${i.dueDate ? `, due ${i.dueDate}` : ''})</span></li>`).join('')}
+      ${allComments.slice(0, 8).map(c => `<li><strong>${c.key}</strong>: "${c.body.substring(0, 100)}${c.body.length > 100 ? '...' : ''}" <span style="color: #6b7280;">— ${c.author}</span></li>`).join('')}
     </ul>
-  </div>
+  </div>` : ''}
+
+  <!-- New Links/MRs -->
+  ${allLinkChanges.length > 0 ? `
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">
+      🔗 New Links & MRs (Last 7 Days)
+    </h2>
+    <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
+      ${allLinkChanges.slice(0, 8).map(l => `<li><strong>${l.key}</strong>: ${l.to ? `Added: ${l.to}` : `Removed: ${l.from}`}</li>`).join('')}
+    </ul>
+  </div>` : ''}
+
+  <!-- Wins -->
+  ${done.length > 0 ? `
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 15px; font-weight: 700; color: #166534; margin: 0 0 8px;">
+      🟢 Completed
+    </h2>
+    <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
+      ${done.slice(0, 8).map(i => `<li><strong>${i.key}</strong>: ${i.summary} <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
+    </ul>
+  </div>` : ''}
 
   <!-- Footer -->
   <div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 24px;">
@@ -123,11 +216,15 @@ export default function EmailGeneratorPage() {
       Program Manager: Jen Kugler | Data sourced from Jira (OMPE)
     </p>
   </div>
-</div>
-    `.trim()
+</div>`.trim()
 
-    setEmailHtml(html)
-    setGenerating(false)
+      setEmailHtml(html)
+    } catch (err) {
+      console.error('Email generation error:', err)
+      setEmailHtml('<div style="color: red; padding: 20px;">Failed to generate email. Check console for details.</div>')
+    } finally {
+      setGenerating(false)
+    }
   }
 
   async function copyToClipboard() {
@@ -158,7 +255,7 @@ export default function EmailGeneratorPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Executive Email Generator</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Generate from {activeDataset.length} stories in active dataset
+            Generates from {activeDataset.length} stories • Includes status updates, comments & link changes from last 7 days
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -167,7 +264,7 @@ export default function EmailGeneratorPage() {
             disabled={generating}
             className="flex items-center gap-2 px-4 py-2 bg-[#76B900] hover:bg-[#5a8f00] text-white font-medium rounded-lg transition disabled:opacity-50"
           >
-            <Mail className="w-4 h-4" />
+            {generating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
             {generating ? 'Generating...' : 'Generate Summary'}
           </button>
           {emailHtml && (
@@ -202,13 +299,15 @@ export default function EmailGeneratorPage() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
           <Mail className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-700 mb-2">Ready to generate</h3>
-          <p className="text-gray-500 text-sm">Click "Generate Summary" to create an executive status email from your {activeDataset.length} active stories.</p>
+          <p className="text-gray-500 text-sm">
+            Click "Generate Summary" to create an executive status email from your {activeDataset.length} active stories.<br/>
+            Includes status updates, recent comments, new MRs/links, health assessment, and key dates.
+          </p>
         </div>
       )}
 
-      {/* Tips */}
       <div className="mt-4 bg-blue-50 rounded-lg p-4 text-sm text-blue-700">
-        <strong>Tip:</strong> The preview above is editable — modify the text directly before copying. The "Copy to Clipboard" button copies rich HTML that pastes beautifully into Outlook and Gmail.
+        <strong>Tip:</strong> The preview is editable — tweak text before copying. "Copy to Clipboard" copies rich HTML that pastes into Outlook/Gmail with formatting intact.
       </div>
     </div>
   )
