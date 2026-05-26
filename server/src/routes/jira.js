@@ -222,15 +222,16 @@ router.get('/dev-teams', requireAuth, async (req, res) => {
 // GET /api/jira/filter-options - Get distinct filter values from current sprint goals
 router.get('/filter-options', requireAuth, async (req, res) => {
   try {
-    const jql = 'project = OMPE AND issuetype = "Sprint Goal" AND status != Done';
+    const jql = 'project = OMPE AND status != Done';
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=assignee,customfield_37300,customfield_12711,customfield_12712`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=assignee,customfield_37300,customfield_12711,customfield_12712,customfield_23812,customfield_31509`
     );
 
     const assignees = new Set();
     const devTeams = new Set();
     const programManagers = new Set();
     const productManagers = new Set();
+    const engPics = new Set();
 
     response.data.issues.forEach(issue => {
       const f = issue.fields;
@@ -240,18 +241,64 @@ router.get('/filter-options', requireAuth, async (req, res) => {
       if (pgm) programManagers.add(pgm);
       const pdm = f.customfield_12711?.displayName || f.customfield_12711?.value;
       if (pdm) productManagers.add(pdm);
+      const ep1 = f.customfield_23812?.displayName || f.customfield_23812?.value;
+      if (ep1) engPics.add(ep1);
+      const ep2 = f.customfield_31509?.displayName || f.customfield_31509?.value;
+      if (ep2) engPics.add(ep2);
     });
 
     res.json({
       assignees: [...assignees].sort(),
       devTeams: [...devTeams].sort(),
       programManagers: [...programManagers].sort(),
-      productManagers: [...productManagers].sort()
+      productManagers: [...productManagers].sort(),
+      engPics: [...engPics].sort()
     });
   } catch (err) {
     console.error('Filter options error:', err.response?.data || err.message);
     res.status(err.response?.status || 500).json({
       error: 'Failed to fetch filter options'
+    });
+  }
+});
+
+// GET /api/jira/query - Generic JQL query endpoint
+router.get('/query', requireAuth, async (req, res) => {
+  try {
+    const { jql } = req.query;
+    if (!jql) {
+      return res.status(400).json({ error: 'JQL query is required' });
+    }
+
+    const response = await jiraRequest(req, 'GET',
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,created,issuetype,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,customfield_23812,customfield_31509,issuelinks,customfield_10015`
+    );
+
+    const issues = response.data.issues.map(issue => ({
+      key: issue.key,
+      summary: issue.fields.summary,
+      type: issue.fields.issuetype?.name,
+      status: issue.fields.status?.name,
+      statusCategory: issue.fields.status?.statusCategory?.key,
+      assignee: issue.fields.assignee?.displayName || 'Unassigned',
+      assigneeKey: issue.fields.assignee?.key,
+      priority: issue.fields.priority?.name,
+      priorityRank: issue.fields.customfield_13210,
+      dueDate: issue.fields.duedate,
+      startDate: issue.fields.customfield_10015,
+      statusUpdate: issue.fields.customfield_14311,
+      devTeam: issue.fields.customfield_37300?.value,
+      programManager: issue.fields.customfield_12712?.displayName || issue.fields.customfield_12712?.value || null,
+      productManager: issue.fields.customfield_12711?.displayName || issue.fields.customfield_12711?.value || null,
+      engPic: issue.fields.customfield_23812?.displayName || issue.fields.customfield_23812?.value || issue.fields.customfield_31509?.displayName || issue.fields.customfield_31509?.value || null,
+      links: issue.fields.issuelinks || []
+    }));
+
+    res.json({ issues, total: response.data.total });
+  } catch (err) {
+    console.error('Query error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: err.response?.data?.errorMessages?.[0] || 'Failed to execute query'
     });
   }
 });

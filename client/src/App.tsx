@@ -3,7 +3,10 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { FilterProvider } from './context/FilterContext'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
+import StoriesPage from './pages/StoriesPage'
 import SprintGoalsPage from './pages/SprintGoalsPage'
+import ReleasesPage from './pages/ReleasesPage'
+import BugsPage from './pages/BugsPage'
 import GanttPage from './pages/GanttPage'
 import CalendarPage from './pages/CalendarPage'
 import DependencyGraphPage from './pages/DependencyGraphPage'
@@ -25,7 +28,10 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<SprintGoalsPage />} />
+              <Route index element={<StoriesPage />} />
+              <Route path="sprint-goals" element={<SprintGoalsPage />} />
+              <Route path="releases" element={<ReleasesPage />} />
+              <Route path="bugs" element={<BugsPage />} />
               <Route path="gantt" element={<GanttPage />} />
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="dependencies" element={<DependencyGraphPage />} />

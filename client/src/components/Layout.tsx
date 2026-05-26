@@ -1,17 +1,26 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
-  LayoutDashboard,
   GanttChart,
   Calendar,
   GitBranch,
   Mail,
   LogOut,
-  Zap
+  Zap,
+  BookOpen,
+  Bug,
+  Rocket,
+  Target
 } from 'lucide-react'
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Sprint Goals' },
+const dataPages = [
+  { to: '/', icon: BookOpen, label: 'Stories' },
+  { to: '/sprint-goals', icon: Target, label: 'Sprint Goals' },
+  { to: '/releases', icon: Rocket, label: 'Releases' },
+  { to: '/bugs', icon: Bug, label: 'Bugs' },
+]
+
+const vizPages = [
   { to: '/gantt', icon: GanttChart, label: 'Gantt Chart' },
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/dependencies', icon: GitBranch, label: 'Dependencies' },
@@ -43,24 +52,53 @@ export default function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? 'bg-[#76B900]/10 text-[#76B900]'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                }`
-              }
-            >
-              <item.icon className="w-5 h-5" />
-              {item.label}
-            </NavLink>
-          ))}
+        <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+          {/* Data Pages */}
+          <div>
+            <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Data Views</p>
+            <div className="space-y-0.5">
+              {dataPages.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.to === '/'}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                      isActive
+                        ? 'bg-[#76B900]/10 text-[#76B900]'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`
+                  }
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+
+          {/* Visualization Pages */}
+          <div>
+            <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visualizations</p>
+            <div className="space-y-0.5">
+              {vizPages.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                      isActive
+                        ? 'bg-[#76B900]/10 text-[#76B900]'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`
+                  }
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
         </nav>
 
         {/* User */}
