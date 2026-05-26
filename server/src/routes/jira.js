@@ -345,7 +345,7 @@ router.get('/issue-details', requireAuth, async (req, res) => {
             c.created && c.created >= sevenDaysAgo
           ).map(c => ({
             author: c.author?.displayName || 'Unknown',
-            body: c.body ? c.body.substring(0, 300) : '',
+            body: c.body || '',
             created: c.created
           }));
 
