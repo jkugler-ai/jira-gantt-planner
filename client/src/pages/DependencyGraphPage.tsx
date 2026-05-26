@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react'
-import axios from 'axios'
 import ReactFlow, {
   Background,
   Controls,
@@ -10,17 +9,9 @@ import ReactFlow, {
 } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { RefreshCw } from 'lucide-react'
-
-interface GanttItem {
-  key: string
-  summary: string
-  type: string
-  status: string
-  statusCategory: string
-  assignee: string
-  links: { type: string; inward?: string; outward?: string; direction: string }[]
-}
+import { AlertTriangle } from 'lucide-react'
+import { useFilterContext } from '../context/FilterContext'
+import type { FilteredIssue } from '../context/FilterContext'
 
 const statusColors: Record<string, string> = {
   done: '#10b981',
@@ -29,27 +20,21 @@ const statusColors: Record<string, string> = {
 }
 
 export default function DependencyGraphPage() {
+  const { activeDataset } = useFilterContext()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
-  const [loading, setLoading] = useState(true)
-  const [selectedNode, setSelectedNode] = useState<GanttItem | null>(null)
-  const [items, setItems] = useState<GanttItem[]>([])
+  const [selectedNode, setSelectedNode] = useState<FilteredIssue | null>(null)
 
-  async function fetchData() {
-    setLoading(true)
-    try {
-      const res = await axios.get('/api/jira/gantt-data')
-      const data: GanttItem[] = res.data.items
-      setItems(data)
-      buildGraph(data)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    if (activeDataset.length > 0) {
+      buildGraph(activeDataset)
+    } else {
+      setNodes([])
+      setEdges([])
     }
-  }
+  }, [activeDataset])
 
-  function buildGraph(data: GanttItem[]) {
+  function buildGraph(data: FilteredIssue[]) {
     const keySet = new Set(data.map(i => i.key))
 
     // Create nodes in a grid layout
@@ -85,21 +70,22 @@ export default function DependencyGraphPage() {
 
     for (const item of data) {
       for (const link of item.links) {
-        const target = link.outward || link.inward
+        const target = link.outwardIssue?.key || link.inwardIssue?.key
         if (target && keySet.has(target)) {
           const edgeId = `${item.key}-${target}`
           const reverseId = `${target}-${item.key}`
           if (!edgeSet.has(edgeId) && !edgeSet.has(reverseId)) {
             edgeSet.add(edgeId)
+            const direction = link.outwardIssue ? 'outward' : 'inward'
             flowEdges.push({
               id: edgeId,
-              source: link.direction === 'outward' ? item.key : target,
-              target: link.direction === 'outward' ? target : item.key,
+              source: direction === 'outward' ? item.key : target,
+              target: direction === 'outward' ? target : item.key,
               markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
               style: { stroke: '#94a3b8', strokeWidth: 1.5 },
-              label: link.type || '',
+              label: link.type?.name || '',
               labelStyle: { fontSize: 9, fill: '#6b7280' },
-              animated: link.type?.toLowerCase().includes('block'),
+              animated: (link.type?.name || '').toLowerCase().includes('block'),
             })
           }
         }
@@ -110,17 +96,25 @@ export default function DependencyGraphPage() {
     setEdges(flowEdges)
   }
 
-  useEffect(() => { fetchData() }, [])
-
   const onNodeClick = useCallback((_: any, node: Node) => {
-    const item = items.find(i => i.key === node.id)
+    const item = activeDataset.find(i => i.key === node.id)
     setSelectedNode(item || null)
-  }, [items])
+  }, [activeDataset])
 
-  if (loading) {
+  if (activeDataset.length === 0) {
     return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+      <div className="p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Dependency Graph</h1>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+          <div>
+            <p className="text-amber-800 font-medium">No active dataset</p>
+            <p className="text-amber-600 text-sm mt-1">
+              Expand sprint goals on the Sprint Goals page to populate data for this view.
+              The Dependency Graph will map relationships between the user stories you've expanded there.
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -130,11 +124,10 @@ export default function DependencyGraphPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dependency Graph</h1>
-          <p className="text-gray-500 text-sm mt-1">Interactive map of issue relationships • Click nodes for details</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Showing {activeDataset.length} stories • Click nodes for details
+          </p>
         </div>
-        <button onClick={fetchData} className="p-2 text-gray-400 hover:text-gray-700">
-          <RefreshCw className="w-4 h-4" />
-        </button>
       </div>
 
       <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm relative" style={{ minHeight: 500 }}>
@@ -151,7 +144,7 @@ export default function DependencyGraphPage() {
           <Controls />
           <MiniMap
             nodeColor={(n) => {
-              const item = items.find(i => i.key === n.id)
+              const item = activeDataset.find(i => i.key === n.id)
               return statusColors[item?.statusCategory || ''] || '#76B900'
             }}
             maskColor="rgba(255,255,255,0.8)"
@@ -179,7 +172,7 @@ export default function DependencyGraphPage() {
             <div className="space-y-1 text-xs text-gray-600">
               <div><span className="font-medium">Status:</span> {selectedNode.status}</div>
               <div><span className="font-medium">Assignee:</span> {selectedNode.assignee}</div>
-              <div><span className="font-medium">Type:</span> {selectedNode.type}</div>
+              <div><span className="font-medium">Dev Team:</span> {selectedNode.devTeam || '—'}</div>
               <div><span className="font-medium">Links:</span> {selectedNode.links.length} connections</div>
             </div>
           </div>

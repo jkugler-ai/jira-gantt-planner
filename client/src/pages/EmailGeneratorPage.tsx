@@ -1,44 +1,36 @@
-import { useState, useEffect, useRef } from 'react'
-import axios from 'axios'
-import { Copy, Check, RefreshCw, Mail } from 'lucide-react'
-
-interface GanttItem {
-  key: string
-  summary: string
-  type: string
-  status: string
-  statusCategory: string
-  assignee: string
-  assigneeKey: string
-  startDate: string | null
-  dueDate: string | null
-  devTeam: string | null
-}
+import { useState, useRef } from 'react'
+import { Copy, Check, Mail, AlertTriangle } from 'lucide-react'
+import { useFilterContext } from '../context/FilterContext'
 
 export default function EmailGeneratorPage() {
-  const [items, setItems] = useState<GanttItem[]>([])
-  const [loading, setLoading] = useState(true)
+  const { activeDataset } = useFilterContext()
   const [generating, setGenerating] = useState(false)
   const [emailHtml, setEmailHtml] = useState('')
   const [copied, setCopied] = useState(false)
   const emailRef = useRef<HTMLDivElement>(null)
 
-  async function fetchData() {
-    setLoading(true)
-    try {
-      const res = await axios.get('/api/jira/gantt-data')
-      setItems(res.data.items)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  if (activeDataset.length === 0) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Executive Email Generator</h1>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+          <div>
+            <p className="text-amber-800 font-medium">No active dataset</p>
+            <p className="text-amber-600 text-sm mt-1">
+              Expand sprint goals on the Sprint Goals page to populate data for this view.
+              The Email Generator will create a status update based on the user stories you've expanded there.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
-
-  useEffect(() => { fetchData() }, [])
 
   function generateEmail() {
     setGenerating(true)
+
+    const items = activeDataset
 
     // Categorize items
     const done = items.filter(i => i.statusCategory === 'done')
@@ -141,7 +133,6 @@ export default function EmailGeneratorPage() {
   async function copyToClipboard() {
     if (emailRef.current) {
       try {
-        // Copy as rich HTML
         const blob = new Blob([emailHtml], { type: 'text/html' })
         await navigator.clipboard.write([
           new ClipboardItem({ 'text/html': blob })
@@ -149,7 +140,6 @@ export default function EmailGeneratorPage() {
         setCopied(true)
         setTimeout(() => setCopied(false), 2000)
       } catch {
-        // Fallback: select all text
         const range = document.createRange()
         range.selectNodeContents(emailRef.current)
         const sel = window.getSelection()
@@ -162,20 +152,14 @@ export default function EmailGeneratorPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
-    )
-  }
-
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Executive Email Generator</h1>
-          <p className="text-gray-500 text-sm mt-1">Generate NVIDIA-branded status updates for leadership</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Generate from {activeDataset.length} stories in active dataset
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -200,7 +184,6 @@ export default function EmailGeneratorPage() {
 
       {emailHtml ? (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          {/* Email preview */}
           <div className="bg-gray-50 px-4 py-2 border-b border-gray-200 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-400"></div>
             <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
@@ -218,8 +201,8 @@ export default function EmailGeneratorPage() {
       ) : (
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-12 text-center">
           <Mail className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">No email generated yet</h3>
-          <p className="text-gray-500 text-sm">Click "Generate Summary" to create an executive status email based on current Jira data.</p>
+          <h3 className="text-lg font-medium text-gray-700 mb-2">Ready to generate</h3>
+          <p className="text-gray-500 text-sm">Click "Generate Summary" to create an executive status email from your {activeDataset.length} active stories.</p>
         </div>
       )}
 

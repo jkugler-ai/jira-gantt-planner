@@ -1,62 +1,66 @@
-import { useState, useEffect } from 'react'
-import axios from 'axios'
+import { useState } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay } from 'date-fns'
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
+import { useFilterContext } from '../context/FilterContext'
 
 interface CalendarEvent {
   key: string
   summary: string
   date: string
-  type: 'start' | 'due' | 'needby'
+  type: 'start' | 'due'
   status: string
   statusCategory: string
   assignee: string
 }
 
 export default function CalendarPage() {
-  const [events, setEvents] = useState<CalendarEvent[]>([])
-  const [loading, setLoading] = useState(true)
+  const { activeDataset } = useFilterContext()
   const [currentMonth, setCurrentMonth] = useState(new Date())
 
-  async function fetchData() {
-    setLoading(true)
-    try {
-      const res = await axios.get('/api/jira/gantt-data')
-      const calEvents: CalendarEvent[] = []
-
-      for (const item of res.data.items) {
-        if (item.startDate) {
-          calEvents.push({
-            key: item.key,
-            summary: item.summary,
-            date: item.startDate,
-            type: 'start',
-            status: item.status,
-            statusCategory: item.statusCategory,
-            assignee: item.assignee
-          })
-        }
-        if (item.dueDate) {
-          calEvents.push({
-            key: item.key,
-            summary: item.summary,
-            date: item.dueDate,
-            type: 'due',
-            status: item.status,
-            statusCategory: item.statusCategory,
-            assignee: item.assignee
-          })
-        }
-      }
-      setEvents(calEvents)
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+  if (activeDataset.length === 0) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Calendar</h1>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+          <div>
+            <p className="text-amber-800 font-medium">No active dataset</p>
+            <p className="text-amber-600 text-sm mt-1">
+              Expand sprint goals on the Sprint Goals page to populate data for this view.
+              The Calendar will display dates from the user stories you've expanded there.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  useEffect(() => { fetchData() }, [])
+  // Build calendar events from active dataset
+  const events: CalendarEvent[] = []
+  for (const item of activeDataset) {
+    if (item.startDate) {
+      events.push({
+        key: item.key,
+        summary: item.summary,
+        date: item.startDate,
+        type: 'start',
+        status: item.status,
+        statusCategory: item.statusCategory,
+        assignee: item.assignee
+      })
+    }
+    if (item.dueDate) {
+      events.push({
+        key: item.key,
+        summary: item.summary,
+        date: item.dueDate,
+        type: 'due',
+        status: item.status,
+        statusCategory: item.statusCategory,
+        assignee: item.assignee
+      })
+    }
+  }
 
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
@@ -71,21 +75,11 @@ export default function CalendarPage() {
   const typeColors: Record<string, string> = {
     start: 'bg-blue-100 text-blue-700 border-blue-200',
     due: 'bg-red-100 text-red-700 border-red-200',
-    needby: 'bg-purple-100 text-purple-700 border-purple-200',
   }
 
   const typeLabels: Record<string, string> = {
     start: '▶',
     due: '◼',
-    needby: '◆',
-  }
-
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
-    )
   }
 
   return (
@@ -93,7 +87,9 @@ export default function CalendarPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Calendar</h1>
-          <p className="text-gray-500 text-sm mt-1">Start dates, due dates, and milestones</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Showing dates from {activeDataset.length} stories in active dataset
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -104,9 +100,6 @@ export default function CalendarPage() {
           </span>
           <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 hover:bg-gray-100 rounded-lg">
             <ChevronRight className="w-5 h-5" />
-          </button>
-          <button onClick={fetchData} className="p-2 text-gray-400 hover:text-gray-700 ml-2">
-            <RefreshCw className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -169,9 +162,6 @@ export default function CalendarPage() {
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-red-100 border border-red-200"></div> Due Date
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="w-3 h-3 rounded bg-purple-100 border border-purple-200"></div> Need By
         </div>
       </div>
     </div>

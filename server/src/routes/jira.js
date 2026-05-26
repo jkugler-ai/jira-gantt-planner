@@ -30,20 +30,37 @@ async function jiraRequest(req, method, path, data = null) {
 // GET /api/jira/sprint-goals - Fetch sprint goals with children
 router.get('/sprint-goals', requireAuth, async (req, res) => {
   try {
-    const { devTeam, assignee } = req.query;
+    // Support multi-select arrays: ?devTeam[]=X&devTeam[]=Y or single values
+    const toArray = (v) => v ? (Array.isArray(v) ? v : [v]) : [];
+    const devTeams = toArray(req.query.devTeam || req.query['devTeam[]']);
+    const assignees = toArray(req.query.assignee || req.query['assignee[]']);
+    const programManagers = toArray(req.query.programManager || req.query['programManager[]']);
+    const productManagers = toArray(req.query.productManager || req.query['productManager[]']);
+    const limit = parseInt(req.query.limit) || 0;
 
     // Build JQL for sprint goals
-    let jql = 'project = OMPE AND issuetype = "Sprint Goal" AND status != Closed';
-    if (devTeam) {
-      jql += ` AND "Development Team" = "${devTeam}"`;
+    let jql = 'project = OMPE AND issuetype = "Sprint Goal" AND status != Done';
+    if (devTeams.length > 0) {
+      const vals = devTeams.map(t => `"${t}"`).join(', ');
+      jql += ` AND "Development Team" in (${vals})`;
     }
-    if (assignee) {
-      jql += ` AND assignee = "${assignee}"`;
+    if (assignees.length > 0) {
+      const vals = assignees.map(a => `"${a}"`).join(', ');
+      jql += ` AND assignee in (${vals})`;
     }
-    jql += ' ORDER BY priority ASC, created DESC';
+    if (programManagers.length > 0) {
+      const vals = programManagers.map(p => `"${p}"`).join(', ');
+      jql += ` AND cf[12712] in (${vals})`;
+    }
+    if (productManagers.length > 0) {
+      const vals = productManagers.map(p => `"${p}"`).join(', ');
+      jql += ` AND cf[12711] in (${vals})`;
+    }
+    jql += ' ORDER BY cf[13210] ASC, priority ASC, created DESC';
 
+    const maxResults = limit > 0 ? limit : 200;
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=100&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,issuelinks&expand=names`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuelinks,customfield_10015&expand=names`
     );
 
     const goals = response.data.issues.map(issue => ({
@@ -54,10 +71,13 @@ router.get('/sprint-goals', requireAuth, async (req, res) => {
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
       assigneeKey: issue.fields.assignee?.key,
       priority: issue.fields.priority?.name,
+      priorityRank: issue.fields.customfield_13210,
       dueDate: issue.fields.duedate,
-      startDate: issue.fields.customfield_10015, // typical start date field
+      startDate: issue.fields.customfield_10015,
       statusUpdate: issue.fields.customfield_14311,
       devTeam: issue.fields.customfield_37300?.value,
+      programManager: issue.fields.customfield_12712?.displayName || issue.fields.customfield_12712?.value || null,
+      productManager: issue.fields.customfield_12711?.displayName || issue.fields.customfield_12711?.value || null,
       links: issue.fields.issuelinks || []
     }));
 
@@ -75,10 +95,10 @@ router.get('/children/:key', requireAuth, async (req, res) => {
   try {
     const parentKey = req.params.key;
     // Search for issues with Parent Link = this key
-    const jql = `project = OMPE AND "Parent Link" = ${parentKey} ORDER BY priority ASC, created ASC`;
+    const jql = `project = OMPE AND "Parent Link" = ${parentKey} ORDER BY cf[13210] ASC, priority ASC, created ASC`;
 
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,issuetype,issuelinks,customfield_10015`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuetype,issuelinks,customfield_10015`
     );
 
     const children = response.data.issues.map(issue => ({
@@ -90,10 +110,13 @@ router.get('/children/:key', requireAuth, async (req, res) => {
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
       assigneeKey: issue.fields.assignee?.key,
       priority: issue.fields.priority?.name,
+      priorityRank: issue.fields.customfield_13210,
       dueDate: issue.fields.duedate,
       startDate: issue.fields.customfield_10015,
       statusUpdate: issue.fields.customfield_14311,
       devTeam: issue.fields.customfield_37300?.value,
+      programManager: issue.fields.customfield_12712?.displayName || issue.fields.customfield_12712?.value || null,
+      productManager: issue.fields.customfield_12711?.displayName || issue.fields.customfield_12711?.value || null,
       links: issue.fields.issuelinks || []
     }));
 
@@ -194,6 +217,43 @@ router.get('/dev-teams', requireAuth, async (req, res) => {
       { name: 'Portal' }
     ]
   });
+});
+
+// GET /api/jira/filter-options - Get distinct filter values from current sprint goals
+router.get('/filter-options', requireAuth, async (req, res) => {
+  try {
+    const jql = 'project = OMPE AND issuetype = "Sprint Goal" AND status != Done';
+    const response = await jiraRequest(req, 'GET',
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=assignee,customfield_37300,customfield_12711,customfield_12712`
+    );
+
+    const assignees = new Set();
+    const devTeams = new Set();
+    const programManagers = new Set();
+    const productManagers = new Set();
+
+    response.data.issues.forEach(issue => {
+      const f = issue.fields;
+      if (f.assignee?.displayName) assignees.add(f.assignee.displayName);
+      if (f.customfield_37300?.value) devTeams.add(f.customfield_37300.value);
+      const pgm = f.customfield_12712?.displayName || f.customfield_12712?.value;
+      if (pgm) programManagers.add(pgm);
+      const pdm = f.customfield_12711?.displayName || f.customfield_12711?.value;
+      if (pdm) productManagers.add(pdm);
+    });
+
+    res.json({
+      assignees: [...assignees].sort(),
+      devTeams: [...devTeams].sort(),
+      programManagers: [...programManagers].sort(),
+      productManagers: [...productManagers].sort()
+    });
+  } catch (err) {
+    console.error('Filter options error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({
+      error: 'Failed to fetch filter options'
+    });
+  }
 });
 
 // GET /api/jira/transitions/:key - Get available transitions

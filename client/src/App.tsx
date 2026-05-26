@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { FilterProvider } from './context/FilterContext'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import SprintGoalsPage from './pages/SprintGoalsPage'
@@ -20,16 +21,18 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route index element={<SprintGoalsPage />} />
-            <Route path="gantt" element={<GanttPage />} />
-            <Route path="calendar" element={<CalendarPage />} />
-            <Route path="dependencies" element={<DependencyGraphPage />} />
-            <Route path="email" element={<EmailGeneratorPage />} />
-          </Route>
-        </Routes>
+        <FilterProvider>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route index element={<SprintGoalsPage />} />
+              <Route path="gantt" element={<GanttPage />} />
+              <Route path="calendar" element={<CalendarPage />} />
+              <Route path="dependencies" element={<DependencyGraphPage />} />
+              <Route path="email" element={<EmailGeneratorPage />} />
+            </Route>
+          </Routes>
+        </FilterProvider>
       </AuthProvider>
     </BrowserRouter>
   )

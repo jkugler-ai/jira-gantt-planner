@@ -1,44 +1,35 @@
-import { useState, useEffect, useRef } from 'react'
-import axios from 'axios'
+import { useState, useRef } from 'react'
 import { format, addDays, differenceInDays } from 'date-fns'
-import { RefreshCw } from 'lucide-react'
-
-interface GanttItem {
-  key: string
-  summary: string
-  type: string
-  status: string
-  statusCategory: string
-  assignee: string
-  assigneeKey: string
-  startDate: string | null
-  dueDate: string | null
-  devTeam: string | null
-  links: { type: string; inward?: string; outward?: string; direction: string }[]
-}
+import { AlertTriangle } from 'lucide-react'
+import { useFilterContext } from '../context/FilterContext'
 
 type ZoomLevel = 'week' | 'month' | 'quarter'
 
 export default function GanttPage() {
-  const [items, setItems] = useState<GanttItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { activeDataset } = useFilterContext()
   const [zoom, setZoom] = useState<ZoomLevel>('month')
   const containerRef = useRef<HTMLDivElement>(null)
 
-  async function fetchData() {
-    setLoading(true)
-    try {
-      const res = await axios.get('/api/jira/gantt-data')
-      setItems(res.data.items.filter((i: GanttItem) => i.startDate || i.dueDate))
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to load data')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Only items with at least one date
+  const items = activeDataset.filter(i => i.startDate || i.dueDate)
 
-  useEffect(() => { fetchData() }, [])
+  if (activeDataset.length === 0) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Gantt Chart</h1>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+          <div>
+            <p className="text-amber-800 font-medium">No active dataset</p>
+            <p className="text-amber-600 text-sm mt-1">
+              Expand sprint goals on the Sprint Goals page to populate data for this view.
+              The Gantt chart will display the user stories you've expanded there.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Calculate date range
   const allDates = items.flatMap(i => [i.startDate, i.dueDate].filter(Boolean)) as string[]
@@ -52,7 +43,7 @@ export default function GanttPage() {
   const dayWidth = zoom === 'week' ? 40 : zoom === 'month' ? 16 : 6
   const chartWidth = totalDays * dayWidth
 
-  function getBarStyle(item: GanttItem) {
+  function getBarStyle(item: typeof items[0]) {
     const start = item.startDate ? new Date(item.startDate) : item.dueDate ? addDays(new Date(item.dueDate), -14) : rangeStart
     const end = item.dueDate ? new Date(item.dueDate) : addDays(start, 14)
     const left = differenceInDays(start, rangeStart) * dayWidth
@@ -69,7 +60,7 @@ export default function GanttPage() {
   }
 
   // Detect overbooked: same assignee overlapping dates
-  function isOverbooked(item: GanttItem): boolean {
+  function isOverbooked(item: typeof items[0]): boolean {
     if (!item.assigneeKey || !item.startDate || !item.dueDate) return false
     return items.some(other =>
       other.key !== item.key &&
@@ -80,25 +71,13 @@ export default function GanttPage() {
     )
   }
 
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center h-full">
-        <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
-      </div>
-    )
-  }
-
-  if (error) {
-    return <div className="p-8"><div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg">{error}</div></div>
-  }
-
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Gantt Chart</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Timeline view with dependency arrows • <span className="text-red-500 font-medium">Red borders</span> = overbooked
+            Showing {items.length} stories with dates (from {activeDataset.length} in active dataset) • <span className="text-red-500 font-medium">Red borders</span> = overbooked
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -114,9 +93,6 @@ export default function GanttPage() {
             onClick={() => setZoom('quarter')}
             className={`px-3 py-1.5 text-sm rounded-lg border ${zoom === 'quarter' ? 'bg-[#76B900] text-white border-[#76B900]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
           >Quarter</button>
-          <button onClick={fetchData} className="p-2 text-gray-400 hover:text-gray-700">
-            <RefreshCw className="w-4 h-4" />
-          </button>
         </div>
       </div>
 
@@ -149,7 +125,6 @@ export default function GanttPage() {
           <div className="flex-1 overflow-x-auto" ref={containerRef}>
             {/* Header with dates */}
             <div className="h-12 bg-gray-50 border-b border-gray-200 relative" style={{ width: chartWidth }}>
-              {/* Month markers */}
               {Array.from({ length: Math.ceil(totalDays / 30) }).map((_, i) => {
                 const d = addDays(rangeStart, i * 30)
                 return (

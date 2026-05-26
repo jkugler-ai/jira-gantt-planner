@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import { ChevronRight, ChevronDown, ExternalLink, Filter, RefreshCw } from 'lucide-react'
+import MultiSelect from '../components/MultiSelect'
+import { useFilterContext } from '../context/FilterContext'
+import type { FilteredIssue } from '../context/FilterContext'
 
 interface SprintGoal {
   key: string
@@ -10,15 +13,25 @@ interface SprintGoal {
   assignee: string
   assigneeKey: string
   priority: string
+  priorityRank: number | null
   dueDate: string | null
   startDate: string | null
   statusUpdate: string | null
   devTeam: string | null
+  programManager: string | null
+  productManager: string | null
   links: any[]
 }
 
 interface ChildIssue extends SprintGoal {
   type: string
+}
+
+interface FilterOptions {
+  assignees: string[]
+  devTeams: string[]
+  programManagers: string[]
+  productManagers: string[]
 }
 
 function StatusBadge({ status, category }: { status: string; category: string }) {
@@ -55,7 +68,11 @@ function RoleBadge({ username }: { username: string }) {
   )
 }
 
-function SprintGoalRow({ goal }: { goal: SprintGoal }) {
+function SprintGoalRow({ goal, onChildrenLoaded, onChildrenRemoved }: {
+  goal: SprintGoal
+  onChildrenLoaded: (parentKey: string, children: ChildIssue[]) => void
+  onChildrenRemoved: (parentKey: string) => void
+}) {
   const [expanded, setExpanded] = useState(false)
   const [children, setChildren] = useState<ChildIssue[]>([])
   const [loadingChildren, setLoadingChildren] = useState(false)
@@ -66,11 +83,15 @@ function SprintGoalRow({ goal }: { goal: SprintGoal }) {
       try {
         const res = await axios.get(`/api/jira/children/${goal.key}`)
         setChildren(res.data.children)
+        onChildrenLoaded(goal.key, res.data.children)
       } catch (err) {
         console.error('Failed to load children', err)
       } finally {
         setLoadingChildren(false)
       }
+    }
+    if (expanded) {
+      onChildrenRemoved(goal.key)
     }
     setExpanded(!expanded)
   }
@@ -108,6 +129,7 @@ function SprintGoalRow({ goal }: { goal: SprintGoal }) {
           {goal.assignee}
           <RoleBadge username={goal.assigneeKey} />
         </td>
+        <td className="px-4 py-3 text-sm text-gray-500">{goal.devTeam || '—'}</td>
         <td className="px-4 py-3 text-sm text-gray-500">{goal.startDate || '—'}</td>
         <td className="px-4 py-3 text-sm text-gray-500">{goal.dueDate || '—'}</td>
         <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate" title={goal.statusUpdate || ''}>
@@ -116,7 +138,7 @@ function SprintGoalRow({ goal }: { goal: SprintGoal }) {
       </tr>
       {expanded && (
         <tr>
-          <td colSpan={8} className="px-0 py-0">
+          <td colSpan={9} className="px-0 py-0">
             <div className="bg-gray-50/50 border-l-4 border-[#76B900]/30 ml-8 mr-4 my-1 rounded-lg">
               {loadingChildren ? (
                 <div className="p-4 text-sm text-gray-500">Loading stories...</div>
@@ -149,6 +171,7 @@ function SprintGoalRow({ goal }: { goal: SprintGoal }) {
                           {child.assignee}
                           <RoleBadge username={child.assigneeKey} />
                         </td>
+                        <td className="px-4 py-2 text-sm text-gray-500">{child.devTeam || '—'}</td>
                         <td className="px-4 py-2 text-sm text-gray-500">{child.startDate || '—'}</td>
                         <td className="px-4 py-2 text-sm text-gray-500">{child.dueDate || '—'}</td>
                       </tr>
@@ -168,16 +191,63 @@ export default function SprintGoalsPage() {
   const [goals, setGoals] = useState<SprintGoal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [devTeamFilter, setDevTeamFilter] = useState('')
-  const [assigneeFilter, setAssigneeFilter] = useState('')
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    assignees: [], devTeams: [], programManagers: [], productManagers: []
+  })
+
+  // Multi-select filter state
+  const [devTeamFilter, setDevTeamFilter] = useState<string[]>([])
+  const [assigneeFilter, setAssigneeFilter] = useState<string[]>([])
+  const [programManagerFilter, setProgramManagerFilter] = useState<string[]>([])
+  const [productManagerFilter, setProductManagerFilter] = useState<string[]>([])
+  const [topNLimit, setTopNLimit] = useState<number>(0)
+
+  // Track loaded children per goal for the active dataset
+  const [childrenMap, setChildrenMap] = useState<Record<string, ChildIssue[]>>({})
+  const { setActiveDataset } = useFilterContext()
+
+  // Update active dataset whenever childrenMap changes
+  useEffect(() => {
+    const allChildren: FilteredIssue[] = Object.values(childrenMap).flat()
+    setActiveDataset(allChildren)
+  }, [childrenMap, setActiveDataset])
+
+  const handleChildrenLoaded = useCallback((parentKey: string, children: ChildIssue[]) => {
+    setChildrenMap(prev => ({ ...prev, [parentKey]: children }))
+  }, [])
+
+  const handleChildrenRemoved = useCallback((parentKey: string) => {
+    setChildrenMap(prev => {
+      const next = { ...prev }
+      delete next[parentKey]
+      return next
+    })
+  }, [])
+
+  // Fetch filter options on mount
+  useEffect(() => {
+    async function fetchOptions() {
+      try {
+        const res = await axios.get('/api/jira/filter-options')
+        setFilterOptions(res.data)
+      } catch (err) {
+        console.error('Failed to load filter options', err)
+      }
+    }
+    fetchOptions()
+  }, [])
 
   async function fetchGoals() {
     setLoading(true)
     setError('')
+    setChildrenMap({})
     try {
       const params = new URLSearchParams()
-      if (devTeamFilter) params.append('devTeam', devTeamFilter)
-      if (assigneeFilter) params.append('assignee', assigneeFilter)
+      devTeamFilter.forEach(t => params.append('devTeam[]', t))
+      assigneeFilter.forEach(a => params.append('assignee[]', a))
+      programManagerFilter.forEach(p => params.append('programManager[]', p))
+      productManagerFilter.forEach(p => params.append('productManager[]', p))
+      if (topNLimit > 0) params.append('limit', String(topNLimit))
       const res = await axios.get(`/api/jira/sprint-goals?${params}`)
       setGoals(res.data.goals)
     } catch (err: any) {
@@ -189,7 +259,9 @@ export default function SprintGoalsPage() {
 
   useEffect(() => {
     fetchGoals()
-  }, [devTeamFilter, assigneeFilter])
+  }, [devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, topNLimit])
+
+  const activeCount = Object.values(childrenMap).flat().length
 
   return (
     <div className="p-8">
@@ -197,7 +269,13 @@ export default function SprintGoalsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Sprint Goals</h1>
-          <p className="text-gray-500 text-sm mt-1">Click a goal to expand user stories</p>
+          <p className="text-gray-500 text-sm mt-1">
+            Click a goal to expand user stories • {activeCount > 0 ? (
+              <span className="text-[#76B900] font-medium">{activeCount} stories in active dataset</span>
+            ) : (
+              'Expand goals to populate downstream views'
+            )}
+          </p>
         </div>
         <button
           onClick={fetchGoals}
@@ -209,26 +287,49 @@ export default function SprintGoalsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 mb-6 bg-white p-4 rounded-xl border border-gray-200">
-        <Filter className="w-4 h-4 text-gray-400" />
-        <select
-          value={devTeamFilter}
-          onChange={e => setDevTeamFilter(e.target.value)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#76B900] outline-none"
-        >
-          <option value="">All Dev Teams</option>
-          <option value="Storage Infrastructure APIs">Storage Infrastructure APIs</option>
-          <option value="USD Storage">USD Storage</option>
-          <option value="Caching Services">Caching Services</option>
-          <option value="Portal">Portal</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Filter by assignee..."
-          value={assigneeFilter}
-          onChange={e => setAssigneeFilter(e.target.value)}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#76B900] outline-none"
-        />
+      <div className="mb-6 bg-white p-4 rounded-xl border border-gray-200">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="w-4 h-4 text-gray-400" />
+          <span className="text-sm font-medium text-gray-700">Filters</span>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+          <MultiSelect
+            label="Dev Team"
+            options={filterOptions.devTeams}
+            selected={devTeamFilter}
+            onChange={setDevTeamFilter}
+          />
+          <MultiSelect
+            label="Assignee"
+            options={filterOptions.assignees}
+            selected={assigneeFilter}
+            onChange={setAssigneeFilter}
+          />
+          <MultiSelect
+            label="Program Manager"
+            options={filterOptions.programManagers}
+            selected={programManagerFilter}
+            onChange={setProgramManagerFilter}
+          />
+          <MultiSelect
+            label="Product Manager"
+            options={filterOptions.productManagers}
+            selected={productManagerFilter}
+            onChange={setProductManagerFilter}
+          />
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Top N (Priority Rank)</label>
+            <input
+              type="number"
+              min={0}
+              max={200}
+              value={topNLimit || ''}
+              onChange={e => setTopNLimit(parseInt(e.target.value) || 0)}
+              placeholder="All"
+              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#76B900] outline-none h-[38px]"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Error */}
@@ -246,6 +347,7 @@ export default function SprintGoalsPage() {
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Summary</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Assignee</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Dev Team</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Start</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Due</th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status Update</th>
@@ -254,19 +356,26 @@ export default function SprintGoalsPage() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
                   <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
                   Loading sprint goals...
                 </td>
               </tr>
             ) : goals.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-12 text-center text-gray-500">
                   No sprint goals found. Try adjusting filters.
                 </td>
               </tr>
             ) : (
-              goals.map(goal => <SprintGoalRow key={goal.key} goal={goal} />)
+              goals.map(goal => (
+                <SprintGoalRow
+                  key={goal.key}
+                  goal={goal}
+                  onChildrenLoaded={handleChildrenLoaded}
+                  onChildrenRemoved={handleChildrenRemoved}
+                />
+              ))
             )}
           </tbody>
         </table>
