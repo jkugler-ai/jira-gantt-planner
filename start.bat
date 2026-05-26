@@ -40,5 +40,6 @@ echo.
 :: Open browser after short delay
 start "" cmd /c "timeout /t 3 /noq >nul && start http://localhost:4201"
 
-:: Start the server
+:: Start the server in production mode
+set NODE_ENV=production
 npm start
