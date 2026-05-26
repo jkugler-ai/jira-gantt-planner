@@ -156,7 +156,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">Status Updates</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${statusUpdates.slice(0, 10).map(s => `<li>${jiraLink(s.key)}: ${jiraMarkupToHtml(s.update)} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
+      ${statusUpdates.slice(0, 10).map(s => `<li>${jiraLink(s.key)} &mdash; <strong>${s.summary}</strong>: ${jiraMarkupToHtml(s.update)} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
@@ -196,7 +196,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #0369a1; margin: 0 0 8px;">Recent Comments (Last 7 Days)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allComments.slice(0, 8).map(c => `<li>${jiraLink(c.key)}: ${jiraMarkupToHtml(c.body)} <span style="color: #6b7280;">&mdash; ${c.author}</span></li>`).join('')}
+      ${allComments.slice(0, 8).map(c => `<li>${jiraLink(c.key)} &mdash; <strong>${c.summary}</strong>: ${jiraMarkupToHtml(c.body)} <span style="color: #6b7280;">&mdash; ${c.author}</span></li>`).join('')}
     </ul>
   </div>` : ''}
 
@@ -205,7 +205,7 @@ export default function EmailGeneratorPage() {
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">New Links &amp; MRs (Last 7 Days)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allLinkChanges.slice(0, 8).map(l => `<li>${jiraLink(l.key)}: ${l.to ? `Linked to: ${jiraMarkupToHtml(l.to)}` : `Removed: ${jiraMarkupToHtml(l.from || '')}`}</li>`).join('')}
+      ${allLinkChanges.slice(0, 8).map(l => `<li>${jiraLink(l.key)} &mdash; <strong>${l.summary}</strong>: ${l.to ? `Linked to: ${jiraMarkupToHtml(l.to)}` : `Removed: ${jiraMarkupToHtml(l.from || '')}`}</li>`).join('')}
     </ul>
   </div>` : ''}
 
