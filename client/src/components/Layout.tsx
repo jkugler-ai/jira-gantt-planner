@@ -10,11 +10,12 @@ import {
   BookOpen,
   Bug,
   Rocket,
-  Target
+  Target,
+  LayoutDashboard
 } from 'lucide-react'
 
 const dataPages = [
-  { to: '/', icon: BookOpen, label: 'Stories' },
+  { to: '/stories', icon: BookOpen, label: 'Stories' },
   { to: '/sprint-goals', icon: Target, label: 'Sprint Goals' },
   { to: '/releases', icon: Rocket, label: 'Releases' },
   { to: '/bugs', icon: Bug, label: 'Bugs' },
@@ -53,6 +54,22 @@ export default function Layout() {
 
         {/* Navigation */}
         <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+          {/* Dashboard */}
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                isActive
+                  ? 'bg-[#76B900]/10 text-[#76B900]'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`
+            }
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Dashboard
+          </NavLink>
+
           {/* Data Pages */}
           <div>
             <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Data Views</p>
@@ -61,7 +78,6 @@ export default function Layout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
-                  end={item.to === '/'}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                       isActive

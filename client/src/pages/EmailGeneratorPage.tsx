@@ -8,6 +8,7 @@ interface IssueDetail {
   recentComments: { author: string; body: string; created: string }[]
   recentChanges: { author: string; date: string; field: string; from: string | null; to: string | null }[]
   linkedTitles: Record<string, string>
+  dateShifts: { field: string; from: string | null; to: string | null; date: string }[]
 }
 
 export default function EmailGeneratorPage() {
@@ -80,6 +81,7 @@ export default function EmailGeneratorPage() {
       // Collect recent comments across all issues
       const allComments: { key: string; summary: string; author: string; body: string }[] = []
       const allLinkChanges: { key: string; summary: string; to: string | null; from: string | null; linkedTitles: Record<string, string> }[] = []
+      const allDateShifts: { key: string; summary: string; field: string; from: string | null; to: string | null }[] = []
 
       items.forEach(item => {
         const detail = details[item.key]
@@ -90,6 +92,11 @@ export default function EmailGeneratorPage() {
           detail.recentChanges.forEach(ch => {
             allLinkChanges.push({ key: item.key, summary: item.summary, to: ch.to, from: ch.from, linkedTitles: detail.linkedTitles || {} })
           })
+          if (detail.dateShifts) {
+            detail.dateShifts.forEach(ds => {
+              allDateShifts.push({ key: item.key, summary: item.summary, field: ds.field, from: ds.from, to: ds.to })
+            })
+          }
         }
       })
 
@@ -170,6 +177,15 @@ export default function EmailGeneratorPage() {
     <h2 style="font-size: 15px; font-weight: 700; color: #7c3aed; margin: 0 0 8px;">Important Dates (Next 2 Weeks)</h2>
     <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
       ${upcomingDue.sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime()).slice(0, 10).map(i => `<li>${jiraLink(i.key)}: ${i.summary} &mdash; <span style="color: #7c3aed; font-weight: 600;">Due ${i.dueDate}</span> <span style="color: #6b7280;">(${i.assignee})</span></li>`).join('')}
+    </ul>
+  </div>` : ''}
+
+  <!-- Date Shifts -->
+  ${allDateShifts.length > 0 ? `
+  <div style="margin-bottom: 20px;">
+    <h2 style="font-size: 15px; font-weight: 700; color: #b45309; margin: 0 0 8px;">Date Shifts (Last 7 Days)</h2>
+    <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
+      ${allDateShifts.slice(0, 10).map(ds => `<li>${jiraLink(ds.key)} &mdash; ${ds.summary}: <span style="color: #6b7280;">${ds.field}</span> <span style="color: #991b1b; text-decoration: line-through;">${ds.from || 'none'}</span> &rarr; <span style="color: #166534; font-weight: 600;">${ds.to || 'removed'}</span></li>`).join('')}
     </ul>
   </div>` : ''}
 

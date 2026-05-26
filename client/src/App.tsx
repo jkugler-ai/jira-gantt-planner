@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { FilterProvider } from './context/FilterContext'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
+import DashboardPage from './pages/DashboardPage'
 import StoriesPage from './pages/StoriesPage'
 import SprintGoalsPage from './pages/SprintGoalsPage'
 import ReleasesPage from './pages/ReleasesPage'
@@ -28,7 +29,8 @@ function App() {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<StoriesPage />} />
+              <Route index element={<DashboardPage />} />
+              <Route path="stories" element={<StoriesPage />} />
               <Route path="sprint-goals" element={<SprintGoalsPage />} />
               <Route path="releases" element={<ReleasesPage />} />
               <Route path="bugs" element={<BugsPage />} />

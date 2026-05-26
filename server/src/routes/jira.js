@@ -349,7 +349,7 @@ router.get('/issue-details', requireAuth, async (req, res) => {
             created: c.created
           }));
 
-          // Get changelog for link changes
+          // Get changelog for link changes and date shifts
           const changelogRes = await jiraRequest(req, 'GET', `/issue/${key}?expand=changelog&fields=none`);
           const recentChanges = (changelogRes.data.changelog?.histories || []).filter(h =>
             h.created && h.created >= sevenDaysAgo
@@ -362,6 +362,20 @@ router.get('/issue-details', requireAuth, async (req, res) => {
               field: item.field,
               from: item.fromString || null,
               to: item.toString || null
+            }))
+          );
+
+          // Track date shifts (due date or start date changes)
+          const dateShifts = (changelogRes.data.changelog?.histories || []).filter(h =>
+            h.created && h.created >= sevenDaysAgo
+          ).flatMap(h => 
+            (h.items || []).filter(item => 
+              item.field === 'duedate' || item.field === 'Start date' || item.field === 'Due Date'
+            ).map(item => ({
+              field: item.field === 'duedate' || item.field === 'Due Date' ? 'Due Date' : 'Start Date',
+              from: item.fromString || null,
+              to: item.toString || null,
+              date: h.created
             }))
           );
 
@@ -389,7 +403,7 @@ router.get('/issue-details', requireAuth, async (req, res) => {
             }
           }
 
-          return { key, recentComments, recentChanges, linkedTitles };
+          return { key, recentComments, recentChanges, linkedTitles, dateShifts };
         } catch (err) {
           return { key, recentComments: [], recentChanges: [], error: true };
         }
