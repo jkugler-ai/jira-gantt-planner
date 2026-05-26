@@ -206,6 +206,28 @@ router.get('/gantt-data', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/jira/user-search - Search for Jira users
+router.get('/user-search', requireAuth, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || query.length < 2) {
+      return res.json({ users: [] });
+    }
+    const response = await jiraRequest(req, 'GET',
+      `/user/search?username=${encodeURIComponent(query)}&maxResults=20`
+    );
+    const users = response.data.map(u => ({
+      key: u.key,
+      name: u.name,
+      displayName: u.displayName
+    }));
+    res.json({ users });
+  } catch (err) {
+    console.error('User search error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to search users' });
+  }
+});
+
 // GET /api/jira/dev-teams - Get available dev teams
 router.get('/dev-teams', requireAuth, async (req, res) => {
   // Return known dev teams for OMPE

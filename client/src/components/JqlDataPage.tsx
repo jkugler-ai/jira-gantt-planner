@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search } from 'lucide-react'
 import MultiSelect from './MultiSelect'
+import UserSearch from './UserSearch'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { useSavedQueries, getDefaultQuery } from '../lib/savedQueries'
@@ -74,7 +75,6 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
   const [programManagerFilter, setProgramManagerFilter] = useState<string[]>([])
   const [productManagerFilter, setProductManagerFilter] = useState<string[]>([])
   const [engPicFilter, setEngPicFilter] = useState<string[]>([])
-  const [topNLimit, setTopNLimit] = useState<number>(0)
 
   const { setActiveDataset } = useFilterContext()
   const { queries, save, remove } = useSavedQueries(pageId)
@@ -97,7 +97,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
       const filtered = applyClientFilters(issues)
       setActiveDataset(filtered as FilteredIssue[])
     }
-  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, topNLimit, feedsDownstream])
+  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, feedsDownstream])
 
   // Fetch filter options
   useEffect(() => {
@@ -128,9 +128,6 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
     }
     if (engPicFilter.length > 0) {
       filtered = filtered.filter(i => i.engPic && engPicFilter.includes(i.engPic))
-    }
-    if (topNLimit > 0) {
-      filtered = filtered.slice(0, topNLimit)
     }
     return filtered
   }
@@ -287,16 +284,15 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
             </span>
           )}
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
           <MultiSelect
             label="Dev Team"
             options={filterOptions.devTeams}
             selected={devTeamFilter}
             onChange={setDevTeamFilter}
           />
-          <MultiSelect
+          <UserSearch
             label="Assignee"
-            options={filterOptions.assignees}
             selected={assigneeFilter}
             onChange={setAssigneeFilter}
           />
@@ -318,18 +314,6 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, feeds
             selected={engPicFilter}
             onChange={setEngPicFilter}
           />
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Top N (Priority)</label>
-            <input
-              type="number"
-              min={0}
-              max={500}
-              value={topNLimit || ''}
-              onChange={e => setTopNLimit(parseInt(e.target.value) || 0)}
-              placeholder="All"
-              className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-[#76B900] outline-none h-[38px]"
-            />
-          </div>
         </div>
       </div>
 
