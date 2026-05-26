@@ -155,9 +155,11 @@ export default function EmailGeneratorPage() {
   ${statusUpdates.length > 0 ? `
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #1e40af; margin: 0 0 8px;">Status Updates</h2>
-    <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${statusUpdates.slice(0, 10).map(s => `<li>${jiraLink(s.key)} &mdash; <strong>${s.summary}</strong>: ${jiraMarkupToHtml(s.update)} <span style="color: #6b7280;">(${s.assignee})</span></li>`).join('')}
-    </ul>
+    ${statusUpdates.slice(0, 10).map(s => `
+    <div style="margin-bottom: 12px; padding-left: 12px; border-left: 3px solid #1e40af20;">
+      <div style="font-size: 13px; font-weight: 600;">${jiraLink(s.key)} &mdash; ${s.summary} <span style="color: #6b7280; font-weight: 400;">(${s.assignee})</span></div>
+      <div style="font-size: 13px; color: #374151; margin-top: 4px; line-height: 1.6;">${jiraMarkupToHtml(s.update)}</div>
+    </div>`).join('')}
   </div>` : ''}
 
   <!-- Important Upcoming Dates -->
@@ -201,13 +203,28 @@ export default function EmailGeneratorPage() {
   </div>` : ''}
 
   <!-- New Links/MRs -->
-  ${allLinkChanges.length > 0 ? `
+  ${allLinkChanges.length > 0 ? (() => {
+    // Group link changes by parent key
+    const grouped: Record<string, { summary: string; changes: { to: string | null; from: string | null }[] }> = {};
+    allLinkChanges.forEach(l => {
+      if (!grouped[l.key]) grouped[l.key] = { summary: l.summary, changes: [] };
+      grouped[l.key].changes.push({ to: l.to, from: l.from });
+    });
+    return `
   <div style="margin-bottom: 20px;">
     <h2 style="font-size: 15px; font-weight: 700; color: #065f46; margin: 0 0 8px;">New Links &amp; MRs (Last 7 Days)</h2>
-    <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
-      ${allLinkChanges.slice(0, 8).map(l => `<li>${jiraLink(l.key)} &mdash; <strong>${l.summary}</strong>: ${l.to ? `Linked to: ${jiraMarkupToHtml(l.to)}` : `Removed: ${jiraMarkupToHtml(l.from || '')}`}</li>`).join('')}
-    </ul>
-  </div>` : ''}
+    ${Object.entries(grouped).slice(0, 10).map(([key, data]) => `
+    <div style="margin-bottom: 10px; padding-left: 12px; border-left: 3px solid #065f4620;">
+      <div style="font-size: 13px; font-weight: 600;">${jiraLink(key)} &mdash; ${data.summary}</div>
+      <ol style="margin: 4px 0 0; padding-left: 20px; color: #374151; font-size: 13px; line-height: 1.8;">
+        ${data.changes.map(ch => ch.to 
+          ? `<li>Linked to: ${jiraMarkupToHtml(ch.to)}</li>`
+          : `<li>Removed: ${jiraMarkupToHtml(ch.from || '')}</li>`
+        ).join('')}
+      </ol>
+    </div>`).join('')}
+  </div>`;
+  })() : ''}
 
   <!-- Wins -->
   ${done.length > 0 ? `
