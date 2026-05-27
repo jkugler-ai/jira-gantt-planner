@@ -61,6 +61,28 @@ function writeDailyTasks(date, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+// GET /api/daily-tasks/calendar/manual - Get all manual tasks with due dates (for calendar)
+router.get('/calendar/manual', requireAuth, (req, res) => {
+  try {
+    const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
+    const tasks = [];
+    for (const file of files) {
+      const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf-8'));
+      if (data.manualTasks) {
+        for (const task of data.manualTasks) {
+          if (task.dueDate && !task.completed) {
+            tasks.push({ ...task, sourceDate: data.date });
+          }
+        }
+      }
+    }
+    res.json({ tasks });
+  } catch (err) {
+    console.error('Calendar manual tasks error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch manual tasks' });
+  }
+});
+
 // GET /api/daily-tasks/:date - Get daily tasks for a date
 router.get('/:date', requireAuth, (req, res) => {
   try {

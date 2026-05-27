@@ -50,6 +50,7 @@ interface ManualTask {
   notes: string
   completed: boolean
   createdAt: string
+  dueDate?: string
 }
 
 interface FollowUp {
@@ -704,8 +705,14 @@ export default function DailyTasksPage() {
                       {task.completed ? <CheckCircle2 className="w-5 h-5 text-blue-500" /> : <Circle className="w-5 h-5 text-gray-300 hover:text-blue-500" />}
                     </button>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.title}</p>
-                      <textarea value={task.notes} onChange={e => updateManualTask(task.id, { notes: e.target.value })} placeholder="Notes..." className="mt-2 w-full p-2 text-xs border border-gray-100 rounded bg-gray-50 resize-y min-h-[32px] focus:outline-none focus:ring-1 focus:ring-blue-200" rows={1} />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.title}</p>
+                        {task.dueDate && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">📅 {task.dueDate}</span>}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <input type="date" value={task.dueDate || ''} onChange={e => updateManualTask(task.id, { dueDate: e.target.value || undefined })} className="text-xs border border-gray-100 rounded px-2 py-1 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-200" title="Set due date (shows on calendar)" />
+                        <textarea value={task.notes} onChange={e => updateManualTask(task.id, { notes: e.target.value })} placeholder="Notes..." className="flex-1 p-2 text-xs border border-gray-100 rounded bg-gray-50 resize-y min-h-[32px] focus:outline-none focus:ring-1 focus:ring-blue-200" rows={1} />
+                      </div>
                     </div>
                     <button onClick={() => deleteManualTask(task.id)} className="text-gray-300 hover:text-red-400 transition flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
                   </div>

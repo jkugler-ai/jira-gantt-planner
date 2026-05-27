@@ -21,6 +21,7 @@ const typeColors: Record<string, { bg: string; text: string; border: string }> =
   'Sprint Goal': { bg: 'bg-indigo-100', text: 'text-indigo-800', border: 'border-indigo-300' },
   Story: { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-200' },
   Bug: { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-200' },
+  Manual: { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300' },
 }
 
 const defaultTypeColor = { bg: 'bg-gray-100', text: 'text-gray-700', border: 'border-gray-200' }
@@ -34,6 +35,7 @@ export default function CalendarPage() {
   const { activeDataset, setPageDataset } = useFilterContext()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [autoLoading, setAutoLoading] = useState(false)
+  const [manualTasks, setManualTasks] = useState<{id: string; title: string; dueDate: string}[]>([])
 
   // Auto-load data from default Stories JQL if nothing is loaded
   useEffect(() => {
@@ -49,6 +51,13 @@ export default function CalendarPage() {
         .catch(() => {})
         .finally(() => setAutoLoading(false))
     }
+  }, [])
+
+  // Fetch manual tasks with due dates
+  useEffect(() => {
+    axios.get('/api/daily-tasks/calendar/manual')
+      .then(res => setManualTasks(res.data.tasks || []))
+      .catch(() => {})
   }, [])
 
   if (activeDataset.length === 0 && autoLoading) {
@@ -105,6 +114,22 @@ export default function CalendarPage() {
         status: item.status,
         statusCategory: item.statusCategory,
         assignee: item.assignee
+      })
+    }
+  }
+
+  // Add manual tasks with due dates
+  for (const task of manualTasks) {
+    if (task.dueDate) {
+      events.push({
+        key: `manual-${task.id}`,
+        summary: task.title,
+        date: task.dueDate,
+        dateType: 'due',
+        issueType: 'Manual',
+        status: 'To Do',
+        statusCategory: 'new',
+        assignee: 'Me'
       })
     }
   }
@@ -217,6 +242,9 @@ export default function CalendarPage() {
         </div>
         <div className="flex items-center gap-1">
           <div className="w-3 h-3 rounded bg-red-100 border border-red-200"></div> Bug
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 rounded bg-green-100 border border-green-300"></div> Manual Task
         </div>
         <div className="ml-4 flex items-center gap-2">
           <span>▶ Start</span>
