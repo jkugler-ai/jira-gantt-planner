@@ -21,8 +21,9 @@ echo  Pulling latest code...
 git pull
 echo.
 
-:: Install all dependencies
+:: Install all dependencies (clear NODE_ENV so devDeps install)
 echo  Installing dependencies...
+set NODE_ENV=
 call npm run install:all
 echo.
 
