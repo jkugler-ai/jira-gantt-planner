@@ -41,8 +41,8 @@ echo.
 echo  (Press Ctrl+C to stop)
 echo.
 
-:: Open browser after short delay (Edge)
-start "" cmd /c "timeout /t 3 /noq >nul && start msedge http://localhost:4201"
+:: Open Edge after short delay
+start "" cmd /c "timeout /t 3 /noq >nul && start microsoft-edge:http://localhost:4201"
 
 :: Start the server in production mode
 set NODE_ENV=production
