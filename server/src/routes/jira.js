@@ -284,6 +284,40 @@ router.get('/filter-options', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/jira/issue/:key/links - Get issue links (blockers, relates-to, etc.)
+router.get('/issue/:key/links', requireAuth, async (req, res) => {
+  try {
+    const response = await jiraRequest(req, 'GET', `/issue/${req.params.key}?fields=issuelinks,subtasks`);
+    const links = response.data.fields.issuelinks || [];
+    const subtasks = response.data.fields.subtasks || [];
+
+    // Extract blockers ("is blocked by" links)
+    const blockers = links
+      .filter(l => l.type.name === 'Blocks' && l.inwardIssue)
+      .map(l => ({
+        key: l.inwardIssue.key,
+        summary: l.inwardIssue.fields.summary,
+        status: l.inwardIssue.fields.status?.name,
+        statusCategory: l.inwardIssue.fields.status?.statusCategory?.key,
+        type: l.inwardIssue.fields.issuetype?.name,
+      }));
+
+    // Also include subtasks
+    const subs = subtasks.map(s => ({
+      key: s.key,
+      summary: s.fields.summary,
+      status: s.fields.status?.name,
+      statusCategory: s.fields.status?.statusCategory?.key,
+      type: s.fields.issuetype?.name,
+    }));
+
+    res.json({ blockers, subtasks: subs, allLinks: links.length });
+  } catch (err) {
+    console.error('Issue links error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to fetch issue links' });
+  }
+});
+
 // GET /api/jira/query - Generic JQL query endpoint
 router.get('/query', requireAuth, async (req, res) => {
   try {
