@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Shield, Plus, Trash2, Search, ExternalLink } from 'lucide-react'
+import { Shield, Plus, Trash2, Search, ExternalLink, Download, RefreshCw } from 'lucide-react'
 
 interface NSpectEntry {
   id: string
@@ -14,10 +14,25 @@ interface NSpectEntry {
   createdAt: string
 }
 
+// Category detection from PLC Pillar ticket summaries
+function categorize(summary: string): string | null {
+  const s = summary.toLowerCase()
+  if (s.includes('osrb') || s.includes('sbom') || s.includes('oss vuln') || s.includes('oss license') || s.includes('open source')) return 'osrb'
+  if (s.includes('export') || s.includes('eccn')) return 'exportCompliance'
+  if (s.includes('legal') || s.includes('privacy')) return 'legalTicket'
+  if (s.includes('mvsb') || s.includes('malware') || s.includes('secret scan') || s.includes('artifact sign')) return 'programMvsb'
+  if (s.includes('nspect') || s.includes('registration')) return 'nspectLink'
+  return null
+}
+
 export default function NSpectPage() {
   const [entries, setEntries] = useState<NSpectEntry[]>([])
   const [search, setSearch] = useState('')
   const [showAdd, setShowAdd] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [importVersion, setImportVersion] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [importError, setImportError] = useState('')
   const [newEntry, setNewEntry] = useState({ nspectId: '', productName: '', nspectLink: '', osrb: '', exportCompliance: '', legalTicket: '', programMvsb: '', notes: '' })
 
   // Load from localStorage
@@ -62,6 +77,89 @@ export default function NSpectPage() {
     save(entries.filter(e => e.id !== id))
   }
 
+  // Import from Jira
+  const importFromJira = async () => {
+    if (!importVersion.trim()) return
+    setImporting(true)
+    setImportError('')
+    try {
+      // Step 1: Find PLC Pillar parent(s) in the fixVersion
+      const fvJql = `project = OMPE AND fixVersion = "${importVersion.trim()}" AND issuetype = "PLC Pillar" ORDER BY key ASC`
+      const fvRes = await fetch(`/api/jira/query?jql=${encodeURIComponent(fvJql)}&maxResults=50`, { credentials: 'include' })
+      if (!fvRes.ok) throw new Error('Failed to query fixVersion')
+      const fvData = await fvRes.json()
+      const plcParents = fvData.issues || []
+
+      if (plcParents.length === 0) {
+        setImportError(`No PLC Pillar tickets found in fixVersion "${importVersion.trim()}"`)
+        setImporting(false)
+        return
+      }
+
+      // Step 2: For each PLC parent, get its blockers
+      const newEntries: NSpectEntry[] = []
+
+      for (const parent of plcParents) {
+        const linkRes = await fetch(`/api/jira/issue/${parent.key}/links`, { credentials: 'include' })
+        if (!linkRes.ok) continue
+        const linkData = await linkRes.json()
+        const blockers = linkData.blockers || []
+
+        // Create one entry per PLC parent, with categorized children
+        const entry: NSpectEntry = {
+          id: crypto.randomUUID(),
+          nspectId: '',
+          productName: parent.summary.replace(/L[01] PLC Parent Task - \[?/, '').replace(/\]?$/, '').trim() || importVersion.trim(),
+          nspectLink: '',
+          osrb: '',
+          exportCompliance: '',
+          legalTicket: '',
+          programMvsb: '',
+          notes: `${parent.key} — ${parent.status}`,
+          createdAt: new Date().toISOString().slice(0, 10),
+        }
+
+        // Categorize each blocker
+        for (const child of blockers) {
+          const cat = categorize(child.summary)
+          const ticketRef = `${child.key} (${child.status})`
+          if (cat === 'osrb') {
+            entry.osrb = entry.osrb ? `${entry.osrb}, ${ticketRef}` : ticketRef
+          } else if (cat === 'exportCompliance') {
+            entry.exportCompliance = entry.exportCompliance ? `${entry.exportCompliance}, ${ticketRef}` : ticketRef
+          } else if (cat === 'legalTicket') {
+            entry.legalTicket = entry.legalTicket ? `${entry.legalTicket}, ${ticketRef}` : ticketRef
+          } else if (cat === 'programMvsb') {
+            entry.programMvsb = entry.programMvsb ? `${entry.programMvsb}, ${ticketRef}` : ticketRef
+          } else if (cat === 'nspectLink') {
+            entry.nspectId = entry.nspectId ? `${entry.nspectId}, ${ticketRef}` : ticketRef
+          }
+          // Uncategorized blockers go to notes
+          if (!cat) {
+            const extra = `${child.key}: ${child.summary.slice(0, 40)} (${child.status})`
+            entry.notes = entry.notes ? `${entry.notes} | ${extra}` : extra
+          }
+        }
+
+        newEntries.push(entry)
+      }
+
+      // Add new entries (skip if product name already exists)
+      const existingNames = new Set(entries.map(e => e.productName.toLowerCase()))
+      const toAdd = newEntries.filter(e => !existingNames.has(e.productName.toLowerCase()))
+      if (toAdd.length === 0) {
+        setImportError(`All PLC parents from "${importVersion.trim()}" already exist in the table`)
+      } else {
+        save([...toAdd, ...entries])
+        setShowImport(false)
+        setImportVersion('')
+      }
+    } catch (e: any) {
+      setImportError(e.message || 'Import failed')
+    }
+    setImporting(false)
+  }
+
   // Filter
   const filtered = entries.filter(e => {
     if (!search) return true
@@ -90,10 +188,39 @@ export default function NSpectPage() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">Track nSpect registrations, OSRB, export compliance, and legal tickets</p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Entry
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setShowImport(!showImport)} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition flex items-center gap-2">
+            <Download className="w-4 h-4" /> Import from Jira
+          </button>
+          <button onClick={() => setShowAdd(!showAdd)} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Add Entry
+          </button>
+        </div>
       </div>
+
+      {/* Import from Jira */}
+      {showImport && (
+        <div className="mb-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <p className="text-sm text-blue-800 mb-2 font-medium">Import PLC Pillar data from a fixVersion</p>
+          <p className="text-xs text-blue-600 mb-3">Enter an exact fixVersion name (e.g. "Storage APIs 26.05.1"). This will find PLC Pillar parents and categorize their blockers into OSRB, Export Compliance, Legal, and MVSB columns.</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={importVersion}
+              onChange={e => setImportVersion(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && importFromJira()}
+              placeholder="fixVersion name..."
+              className="flex-1 border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+            />
+            <button onClick={importFromJira} disabled={importing} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition flex items-center gap-2">
+              {importing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {importing ? 'Importing...' : 'Import'}
+            </button>
+            <button onClick={() => { setShowImport(false); setImportError('') }} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition">Cancel</button>
+          </div>
+          {importError && <p className="text-xs text-red-600 mt-2">{importError}</p>}
+        </div>
+      )}
 
       {/* Add Form */}
       {showAdd && (
@@ -126,7 +253,7 @@ export default function NSpectPage() {
       {/* Table */}
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400 text-sm">
-          {entries.length === 0 ? 'No nSpect entries yet. Click "Add Entry" to get started.' : 'No entries match your search.'}
+          {entries.length === 0 ? 'No nSpect entries yet. Click "Add Entry" or "Import from Jira" to get started.' : 'No entries match your search.'}
         </div>
       ) : (
         <div className="overflow-x-auto border border-gray-200 rounded-xl">
