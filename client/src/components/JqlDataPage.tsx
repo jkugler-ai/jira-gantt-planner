@@ -33,6 +33,7 @@ interface JiraIssue {
   productManager: string | null
   engPic: string | null
   fixVersion: string | null
+  nvbugsId: string | null
   links: any[]
 }
 
@@ -78,33 +79,19 @@ function PriorityBadge({ priority }: { priority: string }) {
   )
 }
 
-function getNvbugsLink(links: any[]): React.ReactNode {
-  // Look for NVBugs references in issue links
-  for (const link of links) {
-    const linked = link.inwardIssue || link.outwardIssue
-    if (linked) {
-      const key = linked.key || ''
-      // NVBugs tickets often have a specific pattern or are in a separate project
-      if (key.toLowerCase().includes('nvbug') || (link.type?.name || '').toLowerCase().includes('nvbug')) {
-        return (
-          <a href={`https://nvbugs.nvidia.com/${key}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs">
-            {key}
-          </a>
-        )
-      }
-    }
-    // Also check for summary text that contains NVBugs ID pattern
-    const summary = (link.inwardIssue?.fields?.summary || link.outwardIssue?.fields?.summary || '')
-    const nvbugMatch = summary.match(/(?:NVBug|nvbug)[s]?[:\s#]*(\d+)/i)
-    if (nvbugMatch) {
-      return (
-        <a href={`https://nvbugs.nvidia.com/${nvbugMatch[1]}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs">
-          {nvbugMatch[1]}
-        </a>
-      )
-    }
-  }
-  return <span className="text-gray-400">—</span>
+function getNvbugsLink(issue: JiraIssue): React.ReactNode {
+  const id = issue.nvbugsId
+  if (!id) return <span className="text-gray-400">—</span>
+  return (
+    <a
+      href={`https://nvbugs.nvidia.com/${id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-[#76B900] hover:underline text-xs font-medium"
+    >
+      {id}
+    </a>
+  )
 }
 
 function SortHeader({ field, label, current, dir, onClick }: {
@@ -555,7 +542,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     )}
                     {showNvbugs && (
                       <td className="px-4 py-3 text-sm">
-                        {getNvbugsLink(issue.links)}
+                        {getNvbugsLink(issue)}
                       </td>
                     )}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
