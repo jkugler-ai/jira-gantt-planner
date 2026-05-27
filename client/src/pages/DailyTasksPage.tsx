@@ -18,7 +18,10 @@ import {
   Filter,
   AlertTriangle,
   Clock,
-  ChevronUp
+  ChevronUp,
+  Play,
+  ArrowRight,
+  RotateCcw
 } from 'lucide-react'
 
 interface JiraTask {
@@ -61,6 +64,12 @@ interface DailyData {
   followUps: FollowUp[]
   overnightSummary: string
   jql: string
+  _carriedFrom?: string
+}
+
+interface Transition {
+  id: string
+  name: string
 }
 
 const DEFAULT_JQL = '(assignee = currentUser() OR cf[12712] = currentUser()) AND status != Done AND status != Closed ORDER BY priority ASC, duedate ASC'
@@ -158,6 +167,11 @@ export default function DailyTasksPage() {
   // New item inputs
   const [newManualTask, setNewManualTask] = useState('')
   const [newFollowUp, setNewFollowUp] = useState({ title: '', source: 'slack' as const })
+  
+  // Transitions
+  const [transitionMenuKey, setTransitionMenuKey] = useState<string | null>(null)
+  const [transitions, setTransitions] = useState<Transition[]>([])
+  const [transitionLoading, setTransitionLoading] = useState(false)
 
   // Load daily tasks
   const loadData = useCallback(async () => {
@@ -305,6 +319,46 @@ export default function DailyTasksPage() {
     setDirty(true)
   }
 
+  // Quick action: get transitions for an issue
+  const openTransitions = async (key: string) => {
+    if (transitionMenuKey === key) {
+      setTransitionMenuKey(null)
+      return
+    }
+    setTransitionMenuKey(key)
+    setTransitionLoading(true)
+    try {
+      const res = await fetch(`/api/daily-tasks/transitions/${key}`, { credentials: 'include' })
+      if (res.ok) {
+        const json = await res.json()
+        setTransitions(json.transitions || [])
+      }
+    } catch (err) {
+      console.error('Failed to fetch transitions:', err)
+    } finally {
+      setTransitionLoading(false)
+    }
+  }
+
+  // Quick action: perform a transition
+  const doTransition = async (key: string, transitionId: string, transitionName: string) => {
+    try {
+      const res = await fetch(`/api/daily-tasks/transitions/${key}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ transitionId })
+      })
+      if (res.ok) {
+        // Update local state with new status
+        updateJiraTask(key, { status: transitionName, statusCategory: 'indeterminate' })
+        setTransitionMenuKey(null)
+      }
+    } catch (err) {
+      console.error('Failed to transition:', err)
+    }
+  }
+
   const removeJiraTask = (key: string) => {
     setData(prev => ({
       ...prev,
@@ -438,6 +492,16 @@ export default function DailyTasksPage() {
               style={{ width: `${progressPct}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Carry-over banner */}
+      {data._carriedFrom && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2">
+          <RotateCcw className="w-4 h-4 text-blue-500" />
+          <span className="text-sm text-blue-700">
+            Incomplete tasks carried over from <span className="font-medium">{data._carriedFrom}</span>
+          </span>
         </div>
       )}
 
@@ -635,8 +699,15 @@ export default function DailyTasksPage() {
                                 {risk.label}
                               </span>
                             </td>
-                            <td className="px-2 py-2">
+                            <td className="px-2 py-2 relative">
                               <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => openTransitions(task.key)}
+                                  className="text-gray-300 hover:text-[#76B900] transition"
+                                  title="Change status"
+                                >
+                                  <Play className="w-3.5 h-3.5" />
+                                </button>
                                 <button
                                   onClick={() => toggleNotes(task.key)}
                                   className="text-gray-300 hover:text-blue-500 transition"
@@ -652,6 +723,27 @@ export default function DailyTasksPage() {
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
+                              {/* Transition dropdown */}
+                              {transitionMenuKey === task.key && (
+                                <div className="absolute right-0 top-8 z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[160px]">
+                                  {transitionLoading ? (
+                                    <div className="px-3 py-2 text-xs text-gray-400">Loading...</div>
+                                  ) : transitions.length === 0 ? (
+                                    <div className="px-3 py-2 text-xs text-gray-400">No transitions available</div>
+                                  ) : (
+                                    transitions.map(t => (
+                                      <button
+                                        key={t.id}
+                                        onClick={() => doTransition(task.key, t.id, t.name)}
+                                        className="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 flex items-center gap-2 transition"
+                                      >
+                                        <ArrowRight className="w-3 h-3 text-gray-400" />
+                                        {t.name}
+                                      </button>
+                                    ))
+                                  )}
+                                </div>
+                              )}
                             </td>
                           </tr>
                           {hasNotes && (

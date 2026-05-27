@@ -64,7 +64,30 @@ function writeDailyTasks(date, data) {
 // GET /api/daily-tasks/:date - Get daily tasks for a date
 router.get('/:date', requireAuth, (req, res) => {
   try {
-    const data = readDailyTasks(req.params.date);
+    let data = readDailyTasks(req.params.date);
+    
+    // If no data for today and carry-over is requested, pull from previous day
+    if (data.jiraTasks.length === 0 && data.manualTasks.length === 0 && data.followUps.length === 0) {
+      // Find the most recent previous day with data
+      const files = fs.readdirSync(DATA_DIR)
+        .filter(f => f.endsWith('.json') && f < `${req.params.date}.json`)
+        .sort()
+        .reverse();
+      
+      if (files.length > 0) {
+        const prevData = JSON.parse(fs.readFileSync(path.join(DATA_DIR, files[0]), 'utf-8'));
+        // Carry over incomplete manual tasks and follow-ups
+        const carriedManual = (prevData.manualTasks || []).filter(t => !t.completed);
+        const carriedFollowUps = (prevData.followUps || []).filter(f => !f.completed);
+        if (carriedManual.length > 0 || carriedFollowUps.length > 0) {
+          data.manualTasks = carriedManual;
+          data.followUps = carriedFollowUps;
+          data.jql = prevData.jql || '';
+          data._carriedFrom = files[0].replace('.json', '');
+        }
+      }
+    }
+    
     res.json(data);
   } catch (err) {
     console.error('Read daily tasks error:', err.message);
@@ -124,6 +147,31 @@ router.get('/:date/jira', requireAuth, async (req, res) => {
     res.status(err.response?.status || 500).json({
       error: err.response?.data?.errorMessages?.[0] || 'Failed to fetch Jira tasks'
     });
+  }
+});
+
+// GET /api/daily-tasks/transitions/:key - Get available transitions for an issue
+router.get('/transitions/:key', requireAuth, async (req, res) => {
+  try {
+    const response = await jiraRequest(req, 'GET', `/issue/${req.params.key}/transitions`);
+    res.json(response.data);
+  } catch (err) {
+    console.error('Transitions fetch error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to fetch transitions' });
+  }
+});
+
+// POST /api/daily-tasks/transitions/:key - Transition an issue
+router.post('/transitions/:key', requireAuth, async (req, res) => {
+  try {
+    const { transitionId } = req.body;
+    await jiraRequest(req, 'POST', `/issue/${req.params.key}/transitions`, {
+      transition: { id: transitionId }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Transition error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to transition issue' });
   }
 });
 
