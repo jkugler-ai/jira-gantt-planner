@@ -75,13 +75,14 @@ router.get('/:date', requireAuth, (req, res) => {
 // POST /api/daily-tasks/:date - Save daily tasks for a date
 router.post('/:date', requireAuth, (req, res) => {
   try {
-    const { jiraTasks, manualTasks, followUps, overnightSummary } = req.body;
+    const { jiraTasks, manualTasks, followUps, overnightSummary, jql } = req.body;
     const data = {
       date: req.params.date,
       jiraTasks: jiraTasks || [],
       manualTasks: manualTasks || [],
       followUps: followUps || [],
-      overnightSummary: overnightSummary || ''
+      overnightSummary: overnightSummary || '',
+      jql: jql || ''
     };
     writeDailyTasks(req.params.date, data);
     res.json({ success: true });
@@ -91,12 +92,13 @@ router.post('/:date', requireAuth, (req, res) => {
   }
 });
 
-// GET /api/daily-tasks/:date/jira - Fetch fresh Jira tasks assigned to current user
+// GET /api/daily-tasks/:date/jira - Fetch Jira tasks with custom JQL
 router.get('/:date/jira', requireAuth, async (req, res) => {
   try {
-    const jql = 'assignee = currentUser() AND status != Done AND status != Closed ORDER BY priority ASC, duedate ASC';
+    const defaultJql = '(assignee = currentUser() OR cf[12712] = currentUser()) AND status != Done AND status != Closed ORDER BY priority ASC, duedate ASC';
+    const jql = req.query.jql || defaultJql;
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=100&fields=summary,status,assignee,priority,duedate,issuetype,customfield_10015,customfield_37300`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,updated,issuetype,customfield_10015,customfield_37300,customfield_12712,customfield_14311`
     );
 
     const tasks = response.data.issues.map(issue => ({
@@ -107,8 +109,11 @@ router.get('/:date/jira', requireAuth, async (req, res) => {
       priority: issue.fields.priority?.name,
       type: issue.fields.issuetype?.name,
       dueDate: issue.fields.duedate,
+      updated: issue.fields.updated,
       startDate: issue.fields.customfield_10015,
       devTeam: issue.fields.customfield_37300?.value,
+      programManager: issue.fields.customfield_12712?.displayName || issue.fields.customfield_12712?.value || null,
+      statusUpdate: issue.fields.customfield_14311,
       notes: '',
       completed: false
     }));
