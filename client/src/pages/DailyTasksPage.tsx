@@ -2,14 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   ClipboardList,
   RefreshCw,
-  Plus,
   Trash2,
   ChevronDown,
   ChevronRight,
   ExternalLink,
   MessageSquare,
-  Mail,
-  Hash,
   CheckCircle2,
   Circle,
   Sun,
@@ -58,6 +55,10 @@ interface FollowUp {
   source: 'slack' | 'email' | 'other'
   notes: string
   completed: boolean
+  assignee: string
+  createdDate: string
+  dueDate: string
+  link: string
 }
 
 interface DailyData {
@@ -150,9 +151,9 @@ export default function DailyTasksPage() {
   const [dirty, setDirty] = useState(false)
   const [expandedSections, setExpandedSections] = useState({
     overnight: true,
-    jira: true,
+    jira: false,
     followups: true,
-    manual: true
+    manual: false
   })
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set())
   const [jqlInput, setJqlInput] = useState(() => getDefaultQuery(PAGE_ID, DEFAULT_JQL))
@@ -164,10 +165,13 @@ export default function DailyTasksPage() {
   const [filterPriority, setFilterPriority] = useState<string>('')
   const [filterDevTeam, setFilterDevTeam] = useState<string>('')
   const [filterAssignee, setFilterAssignee] = useState<string>('')
+  
+  // Follow-up filters
+  const [filterFuAssignee, setFilterFuAssignee] = useState<string>('')
+  const [filterFuSource, setFilterFuSource] = useState<string>('')
 
   // New item inputs
-  const [newManualTask, setNewManualTask] = useState('')
-  const [newFollowUp, setNewFollowUp] = useState<{ title: string; source: 'slack' | 'email' | 'other' }>({ title: '', source: 'slack' })
+  const [newFollowUp, setNewFollowUp] = useState<{ title: string; source: 'slack' | 'email' | 'other'; assignee: string; dueDate: string; link: string }>({ title: '', source: 'slack', assignee: '', dueDate: '', link: '' })
   
   // Transitions
   const [transitionMenuKey, setTransitionMenuKey] = useState<string | null>(null)
@@ -374,34 +378,18 @@ export default function DailyTasksPage() {
     setDirty(true)
   }
 
-  const updateManualTask = (id: string, updates: Partial<ManualTask>) => {
-    setData(prev => ({ ...prev, manualTasks: prev.manualTasks.map(t => t.id === id ? { ...t, ...updates } : t) }))
-    setDirty(true)
-  }
-
   const updateFollowUp = (id: string, updates: Partial<FollowUp>) => {
     setData(prev => ({ ...prev, followUps: prev.followUps.map(f => f.id === id ? { ...f, ...updates } : f) }))
     setDirty(true)
   }
 
-  const addManualTask = () => {
-    if (!newManualTask.trim()) return
-    setData(prev => ({ ...prev, manualTasks: [...prev.manualTasks, { id: crypto.randomUUID(), title: newManualTask.trim(), notes: '', completed: false, createdAt: new Date().toISOString() }] }))
-    setNewManualTask('')
-    setDirty(true)
-  }
-
   const addFollowUp = () => {
     if (!newFollowUp.title.trim()) return
-    setData(prev => ({ ...prev, followUps: [...prev.followUps, { id: crypto.randomUUID(), title: newFollowUp.title.trim(), source: newFollowUp.source, notes: '', completed: false }] }))
-    setNewFollowUp({ title: '', source: 'slack' })
+    setData(prev => ({ ...prev, followUps: [...prev.followUps, { id: crypto.randomUUID(), title: newFollowUp.title.trim(), source: newFollowUp.source, notes: '', completed: false, assignee: newFollowUp.assignee, createdDate: getToday(), dueDate: newFollowUp.dueDate, link: newFollowUp.link }] }))
+    setNewFollowUp({ title: '', source: 'slack', assignee: '', dueDate: '', link: '' })
     setDirty(true)
   }
 
-  const deleteManualTask = (id: string) => {
-    setData(prev => ({ ...prev, manualTasks: prev.manualTasks.filter(t => t.id !== id) }))
-    setDirty(true)
-  }
 
   const deleteFollowUp = (id: string) => {
     setData(prev => ({ ...prev, followUps: prev.followUps.filter(f => f.id !== id) }))
@@ -422,8 +410,8 @@ export default function DailyTasksPage() {
   }
 
   // Progress stats
-  const totalTasks = data.jiraTasks.length + data.manualTasks.length + data.followUps.length
-  const completedTasks = data.jiraTasks.filter(t => t.completed).length + data.manualTasks.filter(t => t.completed).length + data.followUps.filter(f => f.completed).length
+  const totalTasks = data.jiraTasks.length + data.followUps.length
+  const completedTasks = data.jiraTasks.filter(t => t.completed).length + data.followUps.filter(f => f.completed).length
   const progressPct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
   return (
@@ -660,64 +648,112 @@ export default function DailyTasksPage() {
 
           {/* Follow-ups & Action Items */}
           <Section title="Follow-ups & Action Items" icon={<MessageSquare className="w-4 h-4 text-purple-500" />} expanded={expandedSections.followups} onToggle={() => toggleSection('followups')} count={data.followUps.length} completedCount={data.followUps.filter(f => f.completed).length}>
-            <div className="flex items-center gap-2 mb-3">
-              <input type="text" value={newFollowUp.title} onChange={e => setNewFollowUp(prev => ({ ...prev, title: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addFollowUp()} placeholder="Add a follow-up..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200 focus:border-purple-400" />
-              <select value={newFollowUp.source} onChange={e => setNewFollowUp(prev => ({ ...prev, source: e.target.value as 'slack' | 'email' | 'other' }))} className="border border-gray-200 rounded-lg px-3 py-2 text-sm">
-                <option value="slack">Slack</option>
-                <option value="email">Email</option>
-                <option value="other">Other</option>
-              </select>
-              <button onClick={addFollowUp} className="p-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition"><Plus className="w-4 h-4" /></button>
+            {/* Add form */}
+            <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mb-2">
+                <input type="text" value={newFollowUp.title} onChange={e => setNewFollowUp(prev => ({ ...prev, title: e.target.value }))} onKeyDown={e => e.key === 'Enter' && addFollowUp()} placeholder="Title..." className="col-span-2 border border-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                <input type="text" value={newFollowUp.assignee} onChange={e => setNewFollowUp(prev => ({ ...prev, assignee: e.target.value }))} placeholder="Assignee..." className="border border-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                <select value={newFollowUp.source} onChange={e => setNewFollowUp(prev => ({ ...prev, source: e.target.value as 'slack' | 'email' | 'other' }))} className="border border-gray-200 rounded px-3 py-1.5 text-sm">
+                  <option value="slack">Slack</option>
+                  <option value="email">Email</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <input type="date" value={newFollowUp.dueDate} onChange={e => setNewFollowUp(prev => ({ ...prev, dueDate: e.target.value }))} className="border border-gray-200 rounded px-3 py-1.5 text-sm" title="Due date" />
+                <input type="text" value={newFollowUp.link} onChange={e => setNewFollowUp(prev => ({ ...prev, link: e.target.value }))} placeholder="Link (URL)..." className="col-span-2 border border-gray-200 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-200" />
+                <button onClick={addFollowUp} className="px-4 py-1.5 bg-purple-600 text-white rounded text-sm font-medium hover:bg-purple-700 transition">Add</button>
+              </div>
             </div>
-            <div className="space-y-2">
-              {data.followUps.map(fu => (
-                <div key={fu.id} className={`border border-gray-200 rounded-lg p-3 transition ${fu.completed ? 'bg-gray-50 opacity-70' : 'bg-white'}`}>
-                  <div className="flex items-start gap-3">
-                    <button onClick={() => updateFollowUp(fu.id, { completed: !fu.completed })} className="mt-0.5 flex-shrink-0">
-                      {fu.completed ? <CheckCircle2 className="w-5 h-5 text-purple-500" /> : <Circle className="w-5 h-5 text-gray-300 hover:text-purple-500" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <SourceBadge source={fu.source} />
-                        <p className={`text-sm ${fu.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{fu.title}</p>
-                      </div>
-                      <textarea value={fu.notes} onChange={e => updateFollowUp(fu.id, { notes: e.target.value })} placeholder="Notes..." className="mt-2 w-full p-2 text-xs border border-gray-100 rounded bg-gray-50 resize-y min-h-[32px] focus:outline-none focus:ring-1 focus:ring-purple-200" rows={1} />
-                    </div>
-                    <button onClick={() => deleteFollowUp(fu.id)} className="text-gray-300 hover:text-red-400 transition flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Section>
 
-          {/* Manual Tasks */}
-          <Section title="Manual Tasks" icon={<Plus className="w-4 h-4 text-blue-500" />} expanded={expandedSections.manual} onToggle={() => toggleSection('manual')} count={data.manualTasks.length} completedCount={data.manualTasks.filter(t => t.completed).length}>
-            <div className="flex items-center gap-2 mb-3">
-              <input type="text" value={newManualTask} onChange={e => setNewManualTask(e.target.value)} onKeyDown={e => e.key === 'Enter' && addManualTask()} placeholder="Add a task..." className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400" />
-              <button onClick={addManualTask} className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"><Plus className="w-4 h-4" /></button>
-            </div>
-            <div className="space-y-2">
-              {data.manualTasks.map(task => (
-                <div key={task.id} className={`border border-gray-200 rounded-lg p-3 transition ${task.completed ? 'bg-gray-50 opacity-70' : 'bg-white'}`}>
-                  <div className="flex items-start gap-3">
-                    <button onClick={() => updateManualTask(task.id, { completed: !task.completed })} className="mt-0.5 flex-shrink-0">
-                      {task.completed ? <CheckCircle2 className="w-5 h-5 text-blue-500" /> : <Circle className="w-5 h-5 text-gray-300 hover:text-blue-500" />}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.title}</p>
-                        {task.dueDate && <span className="text-[10px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-medium">📅 {task.dueDate}</span>}
-                      </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        <input type="date" value={task.dueDate || ''} onChange={e => updateManualTask(task.id, { dueDate: e.target.value || undefined })} className="text-xs border border-gray-100 rounded px-2 py-1 bg-gray-50 focus:outline-none focus:ring-1 focus:ring-blue-200" title="Set due date (shows on calendar)" />
-                        <textarea value={task.notes} onChange={e => updateManualTask(task.id, { notes: e.target.value })} placeholder="Notes..." className="flex-1 p-2 text-xs border border-gray-100 rounded bg-gray-50 resize-y min-h-[32px] focus:outline-none focus:ring-1 focus:ring-blue-200" rows={1} />
-                      </div>
-                    </div>
-                    <button onClick={() => deleteManualTask(task.id)} className="text-gray-300 hover:text-red-400 transition flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {/* Filters */}
+            {data.followUps.length > 0 && (
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <Filter className="w-3.5 h-3.5 text-gray-400" />
+                <select value={filterFuAssignee} onChange={e => setFilterFuAssignee(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1">
+                  <option value="">All Assignees</option>
+                  {[...new Set(data.followUps.map(f => f.assignee).filter(Boolean))].sort().map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+                <select value={filterFuSource} onChange={e => setFilterFuSource(e.target.value)} className="text-xs border border-gray-200 rounded px-2 py-1">
+                  <option value="">All Sources</option>
+                  <option value="slack">Slack</option>
+                  <option value="email">Email</option>
+                  <option value="other">Other</option>
+                </select>
+                {(filterFuAssignee || filterFuSource) && (
+                  <button onClick={() => { setFilterFuAssignee(''); setFilterFuSource('') }} className="text-[10px] text-gray-400 hover:text-red-500">Clear</button>
+                )}
+              </div>
+            )}
+
+            {/* Table */}
+            {data.followUps.length === 0 ? (
+              <div className="text-sm text-gray-400 py-4 text-center">No follow-ups yet. Add one above.</div>
+            ) : (
+              <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="w-8 px-2 py-2"></th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Assignee</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Due</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Link</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                      <th className="w-10 px-2 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.followUps
+                      .filter(fu => !filterFuAssignee || fu.assignee === filterFuAssignee)
+                      .filter(fu => !filterFuSource || fu.source === filterFuSource)
+                      .map(fu => (
+                      <tr key={fu.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${fu.completed ? 'opacity-50 bg-gray-50' : ''}`}>
+                        <td className="px-2 py-2 text-center">
+                          <button onClick={() => updateFollowUp(fu.id, { completed: !fu.completed })}>
+                            {fu.completed ? <CheckCircle2 className="w-4 h-4 text-purple-500" /> : <Circle className="w-4 h-4 text-gray-300 hover:text-purple-500" />}
+                          </button>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input type="text" value={fu.title} onChange={e => updateFollowUp(fu.id, { title: e.target.value })} className={`w-full bg-transparent text-sm border-0 p-0 focus:outline-none focus:ring-0 ${fu.completed ? 'line-through text-gray-400' : 'text-gray-800'}`} />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input type="text" value={fu.assignee || ''} onChange={e => updateFollowUp(fu.id, { assignee: e.target.value })} className="w-full bg-transparent text-xs border-0 p-0 text-gray-600 focus:outline-none" placeholder="—" />
+                        </td>
+                        <td className="px-3 py-2">
+                          <select value={fu.source} onChange={e => updateFollowUp(fu.id, { source: e.target.value as 'slack' | 'email' | 'other' })} className="text-xs border-0 bg-transparent p-0 text-gray-600 focus:outline-none">
+                            <option value="slack">Slack</option>
+                            <option value="email">Email</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </td>
+                        <td className="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">{fu.createdDate || '—'}</td>
+                        <td className="px-3 py-2">
+                          <input type="date" value={fu.dueDate || ''} onChange={e => updateFollowUp(fu.id, { dueDate: e.target.value })} className="text-xs border-0 bg-transparent p-0 text-gray-600 focus:outline-none" />
+                        </td>
+                        <td className="px-3 py-2">
+                          {fu.link ? (
+                            <a href={fu.link} target="_blank" rel="noopener noreferrer" className="text-[#76B900] text-xs hover:underline truncate block max-w-[120px]" title={fu.link}>
+                              {(() => { try { const u = new URL(fu.link); return u.pathname.split('/').pop() || u.hostname } catch { return fu.link.slice(0, 20) } })()}
+                            </a>
+                          ) : (
+                            <input type="text" value="" onChange={e => updateFollowUp(fu.id, { link: e.target.value })} className="w-full bg-transparent text-xs border-0 p-0 text-gray-400 focus:outline-none" placeholder="Add link..." />
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <input type="text" value={fu.notes} onChange={e => updateFollowUp(fu.id, { notes: e.target.value })} className="w-full bg-transparent text-xs border-0 p-0 text-gray-600 focus:outline-none" placeholder="Notes..." />
+                        </td>
+                        <td className="px-2 py-2">
+                          <button onClick={() => deleteFollowUp(fu.id)} className="text-gray-300 hover:text-red-400 transition"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </Section>
         </div>
       )}
@@ -753,12 +789,3 @@ function SortHeader({ field, label, current, dir, onClick }: { field: SortField;
 }
 
 // Source badge
-function SourceBadge({ source }: { source: string }) {
-  const config: Record<string, { icon: React.ReactNode; bg: string; text: string }> = {
-    slack: { icon: <Hash className="w-3 h-3" />, bg: 'bg-purple-100', text: 'text-purple-700' },
-    email: { icon: <Mail className="w-3 h-3" />, bg: 'bg-amber-100', text: 'text-amber-700' },
-    other: { icon: <MessageSquare className="w-3 h-3" />, bg: 'bg-gray-100', text: 'text-gray-600' }
-  }
-  const c = config[source] || config.other
-  return <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${c.bg} ${c.text}`}>{c.icon}{source}</span>
-}
