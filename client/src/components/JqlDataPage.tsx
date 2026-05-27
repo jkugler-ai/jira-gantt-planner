@@ -12,6 +12,10 @@ interface JqlDataPageProps {
   subtitle?: string
   defaultJql: string
   extraColumns?: string[]
+  showStatusFilter?: boolean
+  hideProductManagerFilter?: boolean
+  highlightUntriaged?: boolean
+  flagStaleMonths?: number
 }
 
 interface JiraIssue {
@@ -34,6 +38,7 @@ interface JiraIssue {
   engPic: string | null
   fixVersion: string | null
   nvbugsId: string | null
+  reporter: string | null
   links: any[]
 }
 
@@ -43,9 +48,10 @@ interface FilterOptions {
   programManagers: string[]
   productManagers: string[]
   engPics: string[]
+  statuses: string[]
 }
 
-type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion' | 'created'
+type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion' | 'created' | 'reporter'
 type SortDir = 'asc' | 'desc'
 
 const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest']
@@ -115,14 +121,14 @@ function SortHeader({ field, label, current, dir, onClick }: {
   )
 }
 
-export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [] }: JqlDataPageProps) {
+export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [], showStatusFilter = false, hideProductManagerFilter = false, highlightUntriaged = false, flagStaleMonths = 0 }: JqlDataPageProps) {
   const [jql, setJql] = useState('')
   const [jqlInput, setJqlInput] = useState('')
   const [issues, setIssues] = useState<JiraIssue[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    assignees: [], devTeams: [], programManagers: [], productManagers: [], engPics: []
+    assignees: [], devTeams: [], programManagers: [], productManagers: [], engPics: [], statuses: []
   })
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [saveQueryName, setSaveQueryName] = useState('')
@@ -135,6 +141,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   const [programManagerFilter, setProgramManagerFilter] = useState<string[]>([])
   const [productManagerFilter, setProductManagerFilter] = useState<string[]>([])
   const [engPicFilter, setEngPicFilter] = useState<string[]>([])
+  const [statusFilter, setStatusFilter] = useState<string[]>([])
 
   const { setPageDataset } = useFilterContext()
   const { queries, save, remove } = useSavedQueries(pageId)
@@ -144,6 +151,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   const showFixVersion = extraColumns.includes('fixVersion')
   const showCreated = extraColumns.includes('created')
   const showNvbugs = extraColumns.includes('nvbugs')
+  const showReporter = extraColumns.includes('reporter')
 
   // Initialize JQL from saved default or page default
   useEffect(() => {
@@ -164,6 +172,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
     const programManagers = new Set<string>()
     const productManagers = new Set<string>()
     const engPics = new Set<string>()
+    const statuses = new Set<string>()
 
     issues.forEach(issue => {
       if (issue.assignee && issue.assignee !== 'Unassigned') assignees.add(issue.assignee)
@@ -171,6 +180,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
       if (issue.programManager) programManagers.add(issue.programManager)
       if (issue.productManager) productManagers.add(issue.productManager)
       if (issue.engPic) engPics.add(issue.engPic)
+      if (issue.status) statuses.add(issue.status)
     })
 
     setFilterOptions({
@@ -178,7 +188,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
       devTeams: [...devTeams].sort(),
       programManagers: [...programManagers].sort(),
       productManagers: [...productManagers].sort(),
-      engPics: [...engPics].sort()
+      engPics: [...engPics].sort(),
+      statuses: [...statuses].sort()
     })
   }, [issues])
 
@@ -186,7 +197,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   useEffect(() => {
     const filtered = applyClientFilters(issues)
     setPageDataset(pageId, filtered as FilteredIssue[])
-  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter])
+  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, statusFilter])
 
   // Fetch filter options
   useEffect(() => {
@@ -217,6 +228,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
     }
     if (engPicFilter.length > 0) {
       filtered = filtered.filter(i => i.engPic && engPicFilter.includes(i.engPic))
+    }
+    if (statusFilter.length > 0) {
+      filtered = filtered.filter(i => statusFilter.includes(i.status))
     }
     return filtered
   }
@@ -301,13 +315,17 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           cmp = ca - cb
           break
         }
+        case 'reporter': {
+          cmp = (a.reporter || '').localeCompare(b.reporter || '')
+          break
+        }
       }
       return sortDir === 'desc' ? -cmp : cmp
     })
     return sorted
   }, [filteredIssues, sortField, sortDir])
 
-  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0)
+  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0) + (showReporter ? 1 : 0)
 
   return (
     <div className="p-8">
@@ -440,18 +458,28 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
             selected={assigneeFilter}
             onChange={setAssigneeFilter}
           />
+          {showStatusFilter && (
+            <MultiSelect
+              label="Status"
+              options={filterOptions.statuses}
+              selected={statusFilter}
+              onChange={setStatusFilter}
+            />
+          )}
           <MultiSelect
             label="Program Manager"
             options={filterOptions.programManagers}
             selected={programManagerFilter}
             onChange={setProgramManagerFilter}
           />
-          <MultiSelect
-            label="Product Manager"
-            options={filterOptions.productManagers}
-            selected={productManagerFilter}
-            onChange={setProductManagerFilter}
-          />
+          {!hideProductManagerFilter && (
+            <MultiSelect
+              label="Product Manager"
+              options={filterOptions.productManagers}
+              selected={productManagerFilter}
+              onChange={setProductManagerFilter}
+            />
+          )}
           <MultiSelect
             label="Eng PIC"
             options={filterOptions.engPics}
@@ -473,6 +501,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <SortHeader field="key" label="Key" current={sortField} dir={sortDir} onClick={handleSort} />
+                {showCreated && (
+                  <SortHeader field="created" label="Created" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
                 <SortHeader field="type" label="Type" current={sortField} dir={sortDir} onClick={handleSort} />
                 <SortHeader field="summary" label="Summary" current={sortField} dir={sortDir} onClick={handleSort} />
                 <SortHeader field="status" label="Status" current={sortField} dir={sortDir} onClick={handleSort} />
@@ -480,12 +511,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                   <SortHeader field="priority" label="Priority" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
                 <SortHeader field="assignee" label="Assignee" current={sortField} dir={sortDir} onClick={handleSort} />
+                {showReporter && (
+                  <SortHeader field="reporter" label="Reporter" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
                 <SortHeader field="devTeam" label="Dev Team" current={sortField} dir={sortDir} onClick={handleSort} />
                 {showFixVersion && (
                   <SortHeader field="fixVersion" label="Fix Version" current={sortField} dir={sortDir} onClick={handleSort} />
-                )}
-                {showCreated && (
-                  <SortHeader field="created" label="Created" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
                 {showNvbugs && (
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">NVBugs</th>
@@ -509,8 +540,17 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                   </td>
                 </tr>
               ) : (
-                sortedIssues.map(issue => (
-                  <tr key={issue.key} className="hover:bg-gray-50 border-b border-gray-100 transition">
+                sortedIssues.map(issue => {
+                  // Highlight: no priority AND no fix version = needs triage
+                  const needsTriage = highlightUntriaged && (!issue.priority || issue.priority === 'Medium') && !issue.fixVersion
+                  // Flag: open longer than N months
+                  const isStale = flagStaleMonths > 0 && issue.created && 
+                    (Date.now() - new Date(issue.created).getTime()) > (flagStaleMonths * 30 * 24 * 60 * 60 * 1000)
+                  const rowClass = needsTriage 
+                    ? 'bg-orange-50 border-b border-orange-100 hover:bg-orange-100 transition'
+                    : 'hover:bg-gray-50 border-b border-gray-100 transition'
+                  return (
+                  <tr key={issue.key} className={rowClass}>
                     <td className="px-4 py-3">
                       <a
                         href={`https://jirasw.nvidia.com/browse/${issue.key}`}
@@ -522,6 +562,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </td>
+                    {showCreated && (
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {issue.created || '—'}
+                        {isStale && <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium" title="Open > 1 month — review?">⚠️ stale</span>}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-xs text-gray-500">{issue.type || '—'}</td>
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-md truncate">{issue.summary}</td>
                     <td className="px-4 py-3">
@@ -533,12 +579,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                       </td>
                     )}
                     <td className="px-4 py-3 text-sm text-gray-600">{issue.assignee}</td>
+                    {showReporter && (
+                      <td className="px-4 py-3 text-sm text-gray-500">{issue.reporter || '—'}</td>
+                    )}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.devTeam || '—'}</td>
                     {showFixVersion && (
                       <td className="px-4 py-3 text-sm text-gray-500">{issue.fixVersion || '—'}</td>
-                    )}
-                    {showCreated && (
-                      <td className="px-4 py-3 text-sm text-gray-500">{issue.created || '—'}</td>
                     )}
                     {showNvbugs && (
                       <td className="px-4 py-3 text-sm">
@@ -548,7 +594,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.dueDate || '—'}</td>
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>

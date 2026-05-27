@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday, addMonths, subMonths, getDay } from 'date-fns'
-import { ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, ChevronRight, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useFilterContext } from '../context/FilterContext'
+import axios from 'axios'
+import { getDefaultQuery } from '../lib/savedQueries'
 
 interface CalendarEvent {
   key: string
@@ -29,8 +31,36 @@ const dateTypeIcons: Record<string, string> = {
 }
 
 export default function CalendarPage() {
-  const { activeDataset } = useFilterContext()
+  const { activeDataset, setPageDataset } = useFilterContext()
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [autoLoading, setAutoLoading] = useState(false)
+
+  // Auto-load data from default Stories JQL if nothing is loaded
+  useEffect(() => {
+    if (activeDataset.length === 0 && !autoLoading) {
+      setAutoLoading(true)
+      const defaultJql = getDefaultQuery('stories', 'project = OMPE AND issuetype in (Story, "Sprint Goal", Release, Bug) AND (duedate is not EMPTY OR "Start date" is not EMPTY) AND status != Done ORDER BY duedate ASC')
+      axios.get('/api/jira/query', { params: { jql: defaultJql } })
+        .then(res => {
+          if (res.data.issues && res.data.issues.length > 0) {
+            setPageDataset('_calendar_auto', res.data.issues)
+          }
+        })
+        .catch(() => {})
+        .finally(() => setAutoLoading(false))
+    }
+  }, [])
+
+  if (activeDataset.length === 0 && autoLoading) {
+    return (
+      <div className="p-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">Calendar</h1>
+        <div className="flex items-center gap-2 text-gray-500">
+          <RefreshCw className="w-4 h-4 animate-spin" /> Loading calendar data...
+        </div>
+      </div>
+    )
+  }
 
   if (activeDataset.length === 0) {
     return (

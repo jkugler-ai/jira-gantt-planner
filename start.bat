@@ -6,6 +6,9 @@ echo   Mission Control - Starting up...
 echo  ========================================
 echo.
 
+:: Navigate to the app directory
+cd /d "%~dp0"
+
 :: Check if node is installed
 where node >nul 2>nul
 if %errorlevel% neq 0 (
