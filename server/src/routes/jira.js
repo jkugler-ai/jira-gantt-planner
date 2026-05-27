@@ -314,6 +314,7 @@ router.get('/query', requireAuth, async (req, res) => {
       productManager: issue.fields.customfield_12711?.displayName || issue.fields.customfield_12711?.value || null,
       engPic: issue.fields.customfield_23812?.displayName || issue.fields.customfield_23812?.value || issue.fields.customfield_31509?.displayName || issue.fields.customfield_31509?.value || null,
       fixVersion: (issue.fields.fixVersions && issue.fields.fixVersions.length > 0) ? issue.fields.fixVersions.map(v => v.name).join(', ') : null,
+      created: issue.fields.created ? issue.fields.created.split('T')[0] : null,
       links: issue.fields.issuelinks || []
     }));
 

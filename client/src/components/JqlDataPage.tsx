@@ -26,6 +26,7 @@ interface JiraIssue {
   priorityRank?: number | null
   dueDate: string | null
   startDate: string | null
+  created: string | null
   statusUpdate: string | null
   devTeam: string | null
   programManager: string | null
@@ -43,7 +44,7 @@ interface FilterOptions {
   engPics: string[]
 }
 
-type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion'
+type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion' | 'created'
 type SortDir = 'asc' | 'desc'
 
 const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest']
@@ -75,6 +76,35 @@ function PriorityBadge({ priority }: { priority: string }) {
       {priority || '—'}
     </span>
   )
+}
+
+function getNvbugsLink(links: any[]): React.ReactNode {
+  // Look for NVBugs references in issue links
+  for (const link of links) {
+    const linked = link.inwardIssue || link.outwardIssue
+    if (linked) {
+      const key = linked.key || ''
+      // NVBugs tickets often have a specific pattern or are in a separate project
+      if (key.toLowerCase().includes('nvbug') || (link.type?.name || '').toLowerCase().includes('nvbug')) {
+        return (
+          <a href={`https://nvbugs.nvidia.com/${key}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs">
+            {key}
+          </a>
+        )
+      }
+    }
+    // Also check for summary text that contains NVBugs ID pattern
+    const summary = (link.inwardIssue?.fields?.summary || link.outwardIssue?.fields?.summary || '')
+    const nvbugMatch = summary.match(/(?:NVBug|nvbug)[s]?[:\s#]*(\d+)/i)
+    if (nvbugMatch) {
+      return (
+        <a href={`https://nvbugs.nvidia.com/${nvbugMatch[1]}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs">
+          {nvbugMatch[1]}
+        </a>
+      )
+    }
+  }
+  return <span className="text-gray-400">—</span>
 }
 
 function SortHeader({ field, label, current, dir, onClick }: {
@@ -125,6 +155,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   // Which extra columns to show
   const showPriority = extraColumns.includes('priority')
   const showFixVersion = extraColumns.includes('fixVersion')
+  const showCreated = extraColumns.includes('created')
+  const showNvbugs = extraColumns.includes('nvbugs')
 
   // Initialize JQL from saved default or page default
   useEffect(() => {
@@ -276,13 +308,19 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           cmp = (a.fixVersion || '').localeCompare(b.fixVersion || '')
           break
         }
+        case 'created': {
+          const ca = a.created ? new Date(a.created).getTime() : 0
+          const cb = b.created ? new Date(b.created).getTime() : 0
+          cmp = ca - cb
+          break
+        }
       }
       return sortDir === 'desc' ? -cmp : cmp
     })
     return sorted
   }, [filteredIssues, sortField, sortDir])
 
-  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0)
+  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0)
 
   return (
     <div className="p-8">
@@ -459,6 +497,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                 {showFixVersion && (
                   <SortHeader field="fixVersion" label="Fix Version" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
+                {showCreated && (
+                  <SortHeader field="created" label="Created" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
+                {showNvbugs && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">NVBugs</th>
+                )}
                 <SortHeader field="startDate" label="Start" current={sortField} dir={sortDir} onClick={handleSort} />
                 <SortHeader field="dueDate" label="Due" current={sortField} dir={sortDir} onClick={handleSort} />
               </tr>
@@ -505,6 +549,14 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.devTeam || '—'}</td>
                     {showFixVersion && (
                       <td className="px-4 py-3 text-sm text-gray-500">{issue.fixVersion || '—'}</td>
+                    )}
+                    {showCreated && (
+                      <td className="px-4 py-3 text-sm text-gray-500">{issue.created || '—'}</td>
+                    )}
+                    {showNvbugs && (
+                      <td className="px-4 py-3 text-sm">
+                        {getNvbugsLink(issue.links)}
+                      </td>
                     )}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.dueDate || '—'}</td>
