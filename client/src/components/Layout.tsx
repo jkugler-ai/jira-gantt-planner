@@ -11,7 +11,8 @@ import {
   Bug,
   Rocket,
   Target,
-  LayoutDashboard
+  LayoutDashboard,
+  ClipboardList
 } from 'lucide-react'
 
 const dataPages = [
@@ -26,6 +27,10 @@ const vizPages = [
   { to: '/calendar', icon: Calendar, label: 'Calendar' },
   { to: '/dependencies', icon: GitBranch, label: 'Dependencies' },
   { to: '/email', icon: Mail, label: 'Executive Email' },
+]
+
+const personalPages = [
+  { to: '/daily-tasks', icon: ClipboardList, label: 'Daily Tasks' },
 ]
 
 export default function Layout() {
@@ -98,6 +103,29 @@ export default function Layout() {
             <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Visualizations</p>
             <div className="space-y-0.5">
               {vizPages.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                      isActive
+                        ? 'bg-[#76B900]/10 text-[#76B900]'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`
+                  }
+                >
+                  <item.icon className="w-4 h-4" />
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          </div>
+
+          {/* Personal Pages */}
+          <div>
+            <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Personal</p>
+            <div className="space-y-0.5">
+              {personalPages.map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}

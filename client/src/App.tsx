@@ -12,6 +12,7 @@ import GanttPage from './pages/GanttPage'
 import CalendarPage from './pages/CalendarPage'
 import DependencyGraphPage from './pages/DependencyGraphPage'
 import EmailGeneratorPage from './pages/EmailGeneratorPage'
+import DailyTasksPage from './pages/DailyTasksPage'
 import './index.css'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -38,6 +39,7 @@ function App() {
               <Route path="calendar" element={<CalendarPage />} />
               <Route path="dependencies" element={<DependencyGraphPage />} />
               <Route path="email" element={<EmailGeneratorPage />} />
+              <Route path="daily-tasks" element={<DailyTasksPage />} />
             </Route>
           </Routes>
         </FilterProvider>

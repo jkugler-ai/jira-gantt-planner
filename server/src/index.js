@@ -6,6 +6,7 @@ const session = require('express-session');
 const path = require('path');
 const jiraRoutes = require('./routes/jira');
 const authRoutes = require('./routes/auth');
+const dailyTasksRoutes = require('./routes/daily-tasks');
 
 const app = express();
 const PORT = process.env.PORT || 4201;
@@ -33,6 +34,7 @@ app.use(session({
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/jira', jiraRoutes);
+app.use('/api/daily-tasks', dailyTasksRoutes);
 
 // Serve static frontend in production
 if (process.env.NODE_ENV === 'production') {
