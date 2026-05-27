@@ -149,7 +149,7 @@ export default function CalendarPage() {
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         {/* Day headers */}
-        <div className="grid grid-cols-7 border-b border-gray-200 bg-gray-50">
+        <div className="grid grid-cols-[0.5fr_1fr_1fr_1fr_1fr_1fr_0.5fr] border-b border-gray-200 bg-gray-50">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
             <div key={d} className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase text-center">
               {d}
@@ -158,25 +158,27 @@ export default function CalendarPage() {
         </div>
 
         {/* Calendar grid */}
-        <div className="grid grid-cols-7">
+        <div className="grid grid-cols-[0.5fr_1fr_1fr_1fr_1fr_1fr_0.5fr]">
           {/* Empty cells for days before month start */}
           {Array.from({ length: startDay }).map((_, i) => (
-            <div key={`empty-${i}`} className="h-32 border-b border-r border-gray-100 bg-gray-50/50"></div>
+            <div key={`empty-${i}`} className="min-h-[100px] border-b border-r border-gray-100 bg-gray-50/50"></div>
           ))}
 
           {days.map(day => {
             const dayEvents = sortEvents(getEventsForDay(day))
             const today = isToday(day)
+            const dayOfWeek = getDay(day)
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
             return (
               <div
                 key={day.toISOString()}
-                className={`h-32 border-b border-r border-gray-100 p-1 overflow-hidden ${today ? 'bg-[#76B900]/5' : 'hover:bg-gray-50'}`}
+                className={`${isWeekend ? 'min-h-[100px]' : 'min-h-[160px]'} border-b border-r border-gray-100 p-1 overflow-hidden ${today ? 'bg-[#76B900]/5' : isWeekend ? 'bg-gray-50/80' : 'hover:bg-gray-50'}`}
               >
-                <div className={`text-xs font-medium mb-1 px-1 ${today ? 'text-[#76B900] font-bold' : 'text-gray-600'}`}>
+                <div className={`text-xs font-medium mb-1 px-1 ${today ? 'text-[#76B900] font-bold' : isWeekend ? 'text-gray-400' : 'text-gray-600'}`}>
                   {format(day, 'd')}
                 </div>
-                <div className="space-y-0.5 overflow-y-auto max-h-24">
-                  {dayEvents.slice(0, 5).map((ev, i) => {
+                <div className="space-y-0.5 overflow-y-auto max-h-[140px]">
+                  {dayEvents.slice(0, 8).map((ev, i) => {
                     const colors = typeColors[ev.issueType] || defaultTypeColor
                     const isRelease = ev.issueType === 'Release'
                     return (
@@ -192,8 +194,8 @@ export default function CalendarPage() {
                       </a>
                     )
                   })}
-                  {dayEvents.length > 5 && (
-                    <div className="text-[10px] text-gray-400 px-1">+{dayEvents.length - 5} more</div>
+                  {dayEvents.length > 8 && (
+                    <div className="text-[10px] text-gray-400 px-1">+{dayEvents.length - 8} more</div>
                   )}
                 </div>
               </div>
