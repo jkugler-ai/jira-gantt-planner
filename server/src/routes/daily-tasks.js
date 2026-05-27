@@ -135,6 +135,7 @@ router.get('/:date/jira', requireAuth, async (req, res) => {
       updated: issue.fields.updated,
       startDate: issue.fields.customfield_10015,
       devTeam: issue.fields.customfield_37300?.value,
+      assignee: issue.fields.assignee?.displayName || 'Unassigned',
       programManager: issue.fields.customfield_12712?.displayName || issue.fields.customfield_12712?.value || null,
       statusUpdate: issue.fields.customfield_14311,
       notes: '',
