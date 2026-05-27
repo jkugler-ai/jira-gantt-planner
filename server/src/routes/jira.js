@@ -293,7 +293,7 @@ router.get('/query', requireAuth, async (req, res) => {
     }
 
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,created,issuetype,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,customfield_23812,customfield_31509,issuelinks,customfield_10015`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,created,issuetype,fixVersions,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,customfield_23812,customfield_31509,issuelinks,customfield_10015`
     );
 
     const issues = response.data.issues.map(issue => ({
@@ -313,6 +313,7 @@ router.get('/query', requireAuth, async (req, res) => {
       programManager: issue.fields.customfield_12712?.displayName || issue.fields.customfield_12712?.value || null,
       productManager: issue.fields.customfield_12711?.displayName || issue.fields.customfield_12711?.value || null,
       engPic: issue.fields.customfield_23812?.displayName || issue.fields.customfield_23812?.value || issue.fields.customfield_31509?.displayName || issue.fields.customfield_31509?.value || null,
+      fixVersion: (issue.fields.fixVersions && issue.fields.fixVersions.length > 0) ? issue.fields.fixVersions.map(v => v.name).join(', ') : null,
       links: issue.fields.issuelinks || []
     }));
 

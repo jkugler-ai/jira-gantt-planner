@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search } from 'lucide-react'
+import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import MultiSelect from './MultiSelect'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
@@ -11,6 +11,7 @@ interface JqlDataPageProps {
   title: string
   subtitle?: string
   defaultJql: string
+  extraColumns?: string[]
 }
 
 interface JiraIssue {
@@ -30,6 +31,7 @@ interface JiraIssue {
   programManager: string | null
   productManager: string | null
   engPic: string | null
+  fixVersion: string | null
   links: any[]
 }
 
@@ -40,6 +42,11 @@ interface FilterOptions {
   productManagers: string[]
   engPics: string[]
 }
+
+type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion'
+type SortDir = 'asc' | 'desc'
+
+const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest']
 
 function StatusBadge({ status, category }: { status: string; category: string }) {
   const colorMap: Record<string, string> = {
@@ -55,7 +62,43 @@ function StatusBadge({ status, category }: { status: string; category: string })
   )
 }
 
-export default function JqlDataPage({ pageId, title, subtitle, defaultJql }: JqlDataPageProps) {
+function PriorityBadge({ priority }: { priority: string }) {
+  const colorMap: Record<string, string> = {
+    Highest: 'text-red-600',
+    High: 'text-orange-500',
+    Medium: 'text-yellow-600',
+    Low: 'text-blue-500',
+    Lowest: 'text-gray-400',
+  }
+  return (
+    <span className={`text-xs font-medium ${colorMap[priority] || 'text-gray-500'}`}>
+      {priority || '—'}
+    </span>
+  )
+}
+
+function SortHeader({ field, label, current, dir, onClick }: {
+  field: SortField
+  label: string
+  current: SortField | null
+  dir: SortDir
+  onClick: (f: SortField) => void
+}) {
+  const isActive = current === field
+  return (
+    <th
+      className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-700 select-none"
+      onClick={() => onClick(field)}
+    >
+      <span className="flex items-center gap-1">
+        {label}
+        {isActive && (dir === 'asc' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}
+      </span>
+    </th>
+  )
+}
+
+export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [] }: JqlDataPageProps) {
   const [jql, setJql] = useState('')
   const [jqlInput, setJqlInput] = useState('')
   const [issues, setIssues] = useState<JiraIssue[]>([])
@@ -66,6 +109,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql }: Jql
   })
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [saveQueryName, setSaveQueryName] = useState('')
+  const [sortField, setSortField] = useState<SortField | null>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
   // Filters
   const [devTeamFilter, setDevTeamFilter] = useState<string[]>([])
@@ -76,6 +121,10 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql }: Jql
 
   const { setPageDataset } = useFilterContext()
   const { queries, save, remove } = useSavedQueries(pageId)
+
+  // Which extra columns to show
+  const showPriority = extraColumns.includes('priority')
+  const showFixVersion = extraColumns.includes('fixVersion')
 
   // Initialize JQL from saved default or page default
   useEffect(() => {
@@ -183,7 +232,57 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql }: Jql
     setJql(savedJql)
   }
 
+  function handleSort(field: SortField) {
+    if (sortField === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
+
   const filteredIssues = applyClientFilters(issues)
+
+  // Apply sorting
+  const sortedIssues = useMemo(() => {
+    if (!sortField) return filteredIssues
+    const sorted = [...filteredIssues]
+    sorted.sort((a, b) => {
+      let cmp = 0
+      switch (sortField) {
+        case 'key': cmp = a.key.localeCompare(b.key); break
+        case 'type': cmp = (a.type || '').localeCompare(b.type || ''); break
+        case 'summary': cmp = a.summary.localeCompare(b.summary); break
+        case 'status': cmp = (a.status || '').localeCompare(b.status || ''); break
+        case 'assignee': cmp = (a.assignee || '').localeCompare(b.assignee || ''); break
+        case 'devTeam': cmp = (a.devTeam || '').localeCompare(b.devTeam || ''); break
+        case 'startDate': {
+          const da = a.startDate ? new Date(a.startDate).getTime() : Infinity
+          const db = b.startDate ? new Date(b.startDate).getTime() : Infinity
+          cmp = da - db
+          break
+        }
+        case 'dueDate': {
+          const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
+          const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
+          cmp = da - db
+          break
+        }
+        case 'priority': {
+          cmp = PRIORITY_ORDER.indexOf(a.priority || 'Medium') - PRIORITY_ORDER.indexOf(b.priority || 'Medium')
+          break
+        }
+        case 'fixVersion': {
+          cmp = (a.fixVersion || '').localeCompare(b.fixVersion || '')
+          break
+        }
+      }
+      return sortDir === 'desc' ? -cmp : cmp
+    })
+    return sorted
+  }, [filteredIssues, sortField, sortDir])
+
+  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0)
 
   return (
     <div className="p-8">
@@ -344,67 +443,84 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql }: Jql
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Key</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Type</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Summary</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Assignee</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Dev Team</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Start</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Due</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
-                  <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
-                  Loading...
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <SortHeader field="key" label="Key" current={sortField} dir={sortDir} onClick={handleSort} />
+                <SortHeader field="type" label="Type" current={sortField} dir={sortDir} onClick={handleSort} />
+                <SortHeader field="summary" label="Summary" current={sortField} dir={sortDir} onClick={handleSort} />
+                <SortHeader field="status" label="Status" current={sortField} dir={sortDir} onClick={handleSort} />
+                {showPriority && (
+                  <SortHeader field="priority" label="Priority" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
+                <SortHeader field="assignee" label="Assignee" current={sortField} dir={sortDir} onClick={handleSort} />
+                <SortHeader field="devTeam" label="Dev Team" current={sortField} dir={sortDir} onClick={handleSort} />
+                {showFixVersion && (
+                  <SortHeader field="fixVersion" label="Fix Version" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
+                <SortHeader field="startDate" label="Start" current={sortField} dir={sortDir} onClick={handleSort} />
+                <SortHeader field="dueDate" label="Due" current={sortField} dir={sortDir} onClick={handleSort} />
               </tr>
-            ) : filteredIssues.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-gray-500">
-                  No issues found. Try adjusting your JQL or filters.
-                </td>
-              </tr>
-            ) : (
-              filteredIssues.map(issue => (
-                <tr key={issue.key} className="hover:bg-gray-50 border-b border-gray-100 transition">
-                  <td className="px-4 py-3">
-                    <a
-                      href={`https://jirasw.nvidia.com/browse/${issue.key}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#76B900] font-medium hover:underline flex items-center gap-1 text-sm"
-                    >
-                      {issue.key}
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={colSpan} className="px-4 py-12 text-center text-gray-500">
+                    <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2" />
+                    Loading...
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{issue.type || '—'}</td>
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-md truncate">{issue.summary}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={issue.status} category={issue.statusCategory} />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{issue.assignee}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{issue.devTeam || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{issue.dueDate || '—'}</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : sortedIssues.length === 0 ? (
+                <tr>
+                  <td colSpan={colSpan} className="px-4 py-12 text-center text-gray-500">
+                    No issues found. Try adjusting your JQL or filters.
+                  </td>
+                </tr>
+              ) : (
+                sortedIssues.map(issue => (
+                  <tr key={issue.key} className="hover:bg-gray-50 border-b border-gray-100 transition">
+                    <td className="px-4 py-3">
+                      <a
+                        href={`https://jirasw.nvidia.com/browse/${issue.key}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#76B900] font-medium hover:underline flex items-center gap-1 text-sm"
+                      >
+                        {issue.key}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{issue.type || '—'}</td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-md truncate">{issue.summary}</td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={issue.status} category={issue.statusCategory} />
+                    </td>
+                    {showPriority && (
+                      <td className="px-4 py-3">
+                        <PriorityBadge priority={issue.priority} />
+                      </td>
+                    )}
+                    <td className="px-4 py-3 text-sm text-gray-600">{issue.assignee}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{issue.devTeam || '—'}</td>
+                    {showFixVersion && (
+                      <td className="px-4 py-3 text-sm text-gray-500">{issue.fixVersion || '—'}</td>
+                    )}
+                    <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{issue.dueDate || '—'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Summary */}
       {!loading && (
         <div className="mt-4 text-sm text-gray-500">
-          Showing {filteredIssues.length} of {issues.length} issues
+          Showing {sortedIssues.length} of {issues.length} issues
+          {sortField && <span className="ml-2 text-gray-400">• Sorted by {sortField} ({sortDir})</span>}
         </div>
       )}
     </div>
