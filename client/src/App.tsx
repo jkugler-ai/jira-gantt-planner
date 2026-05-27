@@ -13,6 +13,8 @@ import CalendarPage from './pages/CalendarPage'
 import DependencyGraphPage from './pages/DependencyGraphPage'
 import EmailGeneratorPage from './pages/EmailGeneratorPage'
 import DailyTasksPage from './pages/DailyTasksPage'
+import LinksPage from './pages/LinksPage'
+import NSpectPage from './pages/NSpectPage'
 import './index.css'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -40,6 +42,8 @@ function App() {
               <Route path="dependencies" element={<DependencyGraphPage />} />
               <Route path="email" element={<EmailGeneratorPage />} />
               <Route path="daily-tasks" element={<DailyTasksPage />} />
+              <Route path="links" element={<LinksPage />} />
+              <Route path="nspect" element={<NSpectPage />} />
             </Route>
           </Routes>
         </FilterProvider>
