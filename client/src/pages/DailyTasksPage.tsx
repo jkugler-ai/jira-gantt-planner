@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import {
   ClipboardList,
   RefreshCw,
@@ -641,9 +641,8 @@ export default function DailyTasksPage() {
                       const isOverdue = task.dueDate && new Date(task.dueDate) < new Date()
                       const hasNotes = expandedNotes.has(task.key)
                       return (
-                        <>
+                        <React.Fragment key={task.key}>
                           <tr
-                            key={task.key}
                             className={`border-b border-gray-100 hover:bg-gray-50 transition ${task.completed ? 'opacity-50 bg-gray-50' : ''}`}
                           >
                             <td className="px-2 py-2 text-center">
@@ -760,7 +759,7 @@ export default function DailyTasksPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </React.Fragment>
                       )
                     })}
                   </tbody>
