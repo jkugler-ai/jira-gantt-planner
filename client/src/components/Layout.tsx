@@ -29,10 +29,6 @@ const vizPages = [
   { to: '/email', icon: Mail, label: 'Executive Email' },
 ]
 
-const personalPages = [
-  { to: '/daily-tasks', icon: ClipboardList, label: 'Daily Tasks' },
-]
-
 export default function Layout() {
   const { username, logout } = useAuth()
   const navigate = useNavigate()
@@ -73,6 +69,21 @@ export default function Layout() {
           >
             <LayoutDashboard className="w-4 h-4" />
             Dashboard
+          </NavLink>
+
+          {/* Daily Tasks */}
+          <NavLink
+            to="/daily-tasks"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                isActive
+                  ? 'bg-[#76B900]/10 text-[#76B900]'
+                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+              }`
+            }
+          >
+            <ClipboardList className="w-4 h-4" />
+            Daily Tasks
           </NavLink>
 
           {/* Data Pages */}
@@ -121,28 +132,6 @@ export default function Layout() {
             </div>
           </div>
 
-          {/* Personal Pages */}
-          <div>
-            <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Personal</p>
-            <div className="space-y-0.5">
-              {personalPages.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                      isActive
-                        ? 'bg-[#76B900]/10 text-[#76B900]'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`
-                  }
-                >
-                  <item.icon className="w-4 h-4" />
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          </div>
         </nav>
 
         {/* User */}
