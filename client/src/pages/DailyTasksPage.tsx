@@ -17,7 +17,6 @@ import {
   Search,
   Filter,
   AlertTriangle,
-  Clock,
   ChevronUp,
   Play,
   ArrowRight,
@@ -168,7 +167,7 @@ export default function DailyTasksPage() {
 
   // New item inputs
   const [newManualTask, setNewManualTask] = useState('')
-  const [newFollowUp, setNewFollowUp] = useState({ title: '', source: 'slack' as const })
+  const [newFollowUp, setNewFollowUp] = useState<{ title: string; source: 'slack' | 'email' | 'other' }>({ title: '', source: 'slack' })
   
   // Transitions
   const [transitionMenuKey, setTransitionMenuKey] = useState<string | null>(null)
