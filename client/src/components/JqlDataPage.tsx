@@ -199,18 +199,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
     setPageDataset(pageId, filtered as FilteredIssue[])
   }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, statusFilter])
 
-  // Fetch filter options
-  useEffect(() => {
-    async function fetchOptions() {
-      try {
-        const res = await axios.get('/api/jira/filter-options')
-        setFilterOptions(res.data)
-      } catch (err) {
-        console.error('Failed to load filter options', err)
-      }
-    }
-    fetchOptions()
-  }, [])
+  // Filter options are derived from current page results above — no separate fetch needed
 
   function applyClientFilters(data: JiraIssue[]): JiraIssue[] {
     let filtered = [...data]
