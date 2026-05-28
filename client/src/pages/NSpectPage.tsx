@@ -7,20 +7,16 @@ interface NSpectEntry {
   productName: string
   parentKey: string
   securityEngineer: string
-  osrb: { key: string; status: string; link: string }
-  exportCompliance: { key: string; status: string; link: string }
-  legal: { key: string; status: string; link: string }
+  osrbTicket: string
+  exportCompliance: string
+  legalLink: string
+  platforms: string
   notes: string
 }
 
-function emptyCategory() {
-  return { key: '', status: '', link: '' }
-}
-
-function LinkDisplay({ url }: { url: string }) {
+function LinkDisplay({ url, label }: { url: string; label?: string }) {
   if (!url) return <span className="text-gray-300">—</span>
-  // Display shortened version
-  let display = url
+  let display = label || url
   try {
     if (url.includes('nvbugs')) {
       const match = url.match(/\/bug\/(\d+)/)
@@ -42,30 +38,65 @@ function LinkDisplay({ url }: { url: string }) {
   )
 }
 
-function StatusDot({ status }: { status: string }) {
-  if (!status) return null
-  const s = status.toLowerCase()
-  let color = 'bg-gray-300'
-  if (s === 'done' || s === 'closed' || s === 'resolved') color = 'bg-emerald-500'
-  else if (s === 'in progress' || s === 'in review') color = 'bg-amber-400'
-  else if (s === 'open' || s === 'to do' || s === 'new') color = 'bg-blue-400'
+function NvbugsLink({ ticketId }: { ticketId: string }) {
+  if (!ticketId) return <span className="text-gray-300">—</span>
+  // Handle "multiple (range)" case
+  if (ticketId.includes('multiple')) {
+    return <span className="text-xs text-gray-500">{ticketId}</span>
+  }
+  // Could be comma-separated
+  const ids = ticketId.split(',').map(s => s.trim()).filter(Boolean)
   return (
-    <span className="flex items-center gap-1">
-      <span className={`w-2 h-2 rounded-full ${color} inline-block`} title={status}></span>
-      <span className="text-[10px] text-gray-500">{status}</span>
-    </span>
+    <div className="space-y-0.5">
+      {ids.map(id => (
+        <a key={id} href={`https://nvbugspro.nvidia.com/bug/${id}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs flex items-center gap-1">
+          {id}
+          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+        </a>
+      ))}
+    </div>
   )
 }
 
-function JiraLink({ issueKey }: { issueKey: string }) {
-  if (!issueKey) return <span className="text-gray-300">—</span>
+function NSpectIdLink({ nspectId }: { nspectId: string }) {
+  if (!nspectId || nspectId === 'OKAS') return <span className="text-sm font-mono text-gray-900 font-medium">{nspectId || '—'}</span>
+  // Link to nspect.nvidia.com search/registration
+  const url = `https://nspect.nvidia.com/registrations?search=${encodeURIComponent(nspectId)}`
   return (
-    <a href={`https://jirasw.nvidia.com/browse/${issueKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs flex items-center gap-1">
-      {issueKey}
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
+      {nspectId}
       <ExternalLink className="w-3 h-3 flex-shrink-0" />
     </a>
   )
 }
+
+// Seed data from OneNote export
+const SEED_DATA: Omit<NSpectEntry, 'id'>[] = [
+  { nspectId: "NSPECT-SRJE-WI5W", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-A23X-PJ7A", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonDGXC, Kit", notes: "" },
+  { nspectId: "NSPECT-1P7O-W8EM", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-PVEZ-MYOX", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "Kit, OV RTX", notes: "" },
+  { nspectId: "NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", platforms: "", notes: "" },
+  { nspectId: "NSPECT-XQPV-EDBQ", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-5TC5-EP0X", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-XV4E-WJW4", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", platforms: "", notes: "" },
+  { nspectId: "NSPECT-KETX-8HHI", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", platforms: "", notes: "" },
+  { nspectId: "NSPECT-E5HZ-J3CI", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", platforms: "", notes: "" },
+  { nspectId: "NSPECT-36VS-TCJ8", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-GIH7-9JFJ", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", platforms: "", notes: "" },
+  { nspectId: "NSPECT-2PGM-AE57", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
+  { nspectId: "NSPECT-B372-3HK0", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
+  { nspectId: "NSPECT-JSIR-HO21", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", platforms: "", notes: "" },
+  { nspectId: "NSPECT-RYHK-7TPB", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
+  { nspectId: "NSPECT-YN8F-3UY0", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-0IP1-TKSQ", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
+  { nspectId: "NSPECT-1RHM-CABY", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-G2B8-GZ2M", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "NSPECT-EJQD-OLPS", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
+  { nspectId: "NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
+  { nspectId: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
+  { nspectId: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "Pending nSpect registration" },
+]
 
 export default function NSpectPage() {
   const [entries, setEntries] = useState<NSpectEntry[]>([])
@@ -78,17 +109,24 @@ export default function NSpectPage() {
   const [showManualAdd, setShowManualAdd] = useState(false)
   const [manualEntry, setManualEntry] = useState({ nspectId: '', productName: '' })
 
-  // Load from localStorage
+  // Load from localStorage, seed if empty
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('mission-control-nspect-v2')
-      if (stored) setEntries(JSON.parse(stored))
+      const stored = localStorage.getItem('mission-control-nspect-v3')
+      if (stored) {
+        setEntries(JSON.parse(stored))
+      } else {
+        // First load: seed with data from OneNote export
+        const seeded = SEED_DATA.map(s => ({ ...s, id: crypto.randomUUID() }))
+        setEntries(seeded)
+        localStorage.setItem('mission-control-nspect-v3', JSON.stringify(seeded))
+      }
     } catch {}
   }, [])
 
   const save = (updated: NSpectEntry[]) => {
     setEntries(updated)
-    localStorage.setItem('mission-control-nspect-v2', JSON.stringify(updated))
+    localStorage.setItem('mission-control-nspect-v3', JSON.stringify(updated))
   }
 
   const lookupNSpect = async () => {
@@ -110,27 +148,34 @@ export default function NSpectPage() {
         return
       }
 
-      // Check if already exists
-      if (entries.some(e => e.nspectId.toLowerCase() === id.toLowerCase())) {
-        setLookupError(`"${id}" already exists in the table`)
-        setLookupLoading(false)
-        return
+      // Check if already exists — update it if so
+      const existing = entries.find(e => e.nspectId.toLowerCase() === id.toLowerCase())
+      if (existing) {
+        const updates: Partial<NSpectEntry> = {
+          parentKey: data.parent.key,
+          securityEngineer: data.parent.assignee || existing.securityEngineer,
+        }
+        if (data.osrb) updates.osrbTicket = data.osrb.link?.match(/\d+$/)?.[0] || existing.osrbTicket
+        if (data.exportCompliance) updates.exportCompliance = data.exportCompliance.link?.match(/\d+$/)?.[0] || existing.exportCompliance
+        if (data.legal) updates.legalLink = data.legal.link || existing.legalLink
+        save(entries.map(e => e.id === existing.id ? { ...e, ...updates } : e))
+        setLookupSuccess(`Updated "${existing.productName}" from ${data.parent.key}`)
+      } else {
+        const entry: NSpectEntry = {
+          id: crypto.randomUUID(),
+          nspectId: id,
+          productName: data.parent.summary.replace(/L[01] PLC Parent Task\s*[-–—]?\s*\[?/i, '').replace(/\]?\s*$/, '').trim() || id,
+          parentKey: data.parent.key,
+          securityEngineer: data.parent.assignee || '',
+          osrbTicket: data.osrb?.link?.match(/\d+$/)?.[0] || '',
+          exportCompliance: data.exportCompliance?.link?.match(/\d+$/)?.[0] || '',
+          legalLink: data.legal?.link || '',
+          platforms: '',
+          notes: '',
+        }
+        save([entry, ...entries])
+        setLookupSuccess(`Added "${entry.productName}" from ${data.parent.key}`)
       }
-
-      const entry: NSpectEntry = {
-        id: crypto.randomUUID(),
-        nspectId: id,
-        productName: data.parent.summary.replace(/L[01] PLC Parent Task\s*[-–—]?\s*\[?/i, '').replace(/\]?\s*$/, '').trim() || id,
-        parentKey: data.parent.key,
-        securityEngineer: data.parent.assignee || '',
-        osrb: data.osrb ? { key: data.osrb.key, status: data.osrb.status, link: data.osrb.link || '' } : emptyCategory(),
-        exportCompliance: data.exportCompliance ? { key: data.exportCompliance.key, status: data.exportCompliance.status, link: data.exportCompliance.link || '' } : emptyCategory(),
-        legal: data.legal ? { key: data.legal.key, status: data.legal.status, link: data.legal.link || '' } : emptyCategory(),
-        notes: '',
-      }
-
-      save([entry, ...entries])
-      setLookupSuccess(`Added "${entry.productName}" from ${data.parent.key}`)
       setLookupId('')
     } catch (e: any) {
       setLookupError(e.message || 'Lookup failed')
@@ -146,9 +191,10 @@ export default function NSpectPage() {
       productName: manualEntry.productName.trim(),
       parentKey: '',
       securityEngineer: '',
-      osrb: emptyCategory(),
-      exportCompliance: emptyCategory(),
-      legal: emptyCategory(),
+      osrbTicket: '',
+      exportCompliance: '',
+      legalLink: '',
+      platforms: '',
       notes: '',
     }
     save([entry, ...entries])
@@ -156,40 +202,13 @@ export default function NSpectPage() {
     setShowManualAdd(false)
   }
 
-  const updateEntry = (id: string, updates: Partial<NSpectEntry>) => {
-    save(entries.map(e => e.id === id ? { ...e, ...updates } : e))
-  }
-
-  const updateCategory = (id: string, category: 'osrb' | 'exportCompliance' | 'legal', field: string, value: string) => {
-    save(entries.map(e => {
-      if (e.id !== id) return e
-      return { ...e, [category]: { ...e[category], [field]: value } }
-    }))
+  const updateEntry = (id: string, field: keyof NSpectEntry, value: string) => {
+    save(entries.map(e => e.id === id ? { ...e, [field]: value } : e))
   }
 
   const deleteEntry = (id: string) => {
     if (!confirm('Delete this entry?')) return
     save(entries.filter(e => e.id !== id))
-  }
-
-  const refreshEntry = async (entry: NSpectEntry) => {
-    if (!entry.nspectId) return
-    try {
-      const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
-      if (!res.ok) return
-      const data = await res.json()
-      if (!data.found) return
-
-      const updates: Partial<NSpectEntry> = {
-        parentKey: data.parent.key,
-        securityEngineer: data.parent.assignee || entry.securityEngineer,
-      }
-      if (data.osrb) updates.osrb = { key: data.osrb.key, status: data.osrb.status, link: data.osrb.link || entry.osrb.link }
-      if (data.exportCompliance) updates.exportCompliance = { key: data.exportCompliance.key, status: data.exportCompliance.status, link: data.exportCompliance.link || entry.exportCompliance.link }
-      if (data.legal) updates.legal = { key: data.legal.key, status: data.legal.status, link: data.legal.link || entry.legal.link }
-
-      updateEntry(entry.id, updates)
-    } catch {}
   }
 
   // Filter
@@ -200,6 +219,7 @@ export default function NSpectPage() {
       e.productName.toLowerCase().includes(s) ||
       e.securityEngineer.toLowerCase().includes(s) ||
       e.parentKey.toLowerCase().includes(s) ||
+      e.platforms.toLowerCase().includes(s) ||
       e.notes.toLowerCase().includes(s)
   })
 
@@ -212,11 +232,11 @@ export default function NSpectPage() {
             <Shield className="w-6 h-6 text-[#76B900]" />
             nSpect Tracker
           </h1>
-          <p className="text-gray-500 text-sm mt-1">PLC compliance tracking — OSRB, Export, Legal</p>
+          <p className="text-gray-500 text-sm mt-1">PLC compliance — {entries.length} registrations tracked</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => { setShowLookup(!showLookup); setShowManualAdd(false) }} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-2">
-            <Download className="w-4 h-4" /> Import by nSpect ID
+            <Download className="w-4 h-4" /> Import from Jira
           </button>
           <button onClick={() => { setShowManualAdd(!showManualAdd); setShowLookup(false) }} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add Manual
@@ -228,7 +248,7 @@ export default function NSpectPage() {
       {showLookup && (
         <div className="mb-4 p-4 bg-[#76B900]/5 rounded-xl border border-[#76B900]/20">
           <p className="text-sm text-gray-700 mb-2 font-medium">Look up by nSpect ID</p>
-          <p className="text-xs text-gray-500 mb-3">Enter an nSpect ID (e.g. NSPECT-B372-3HK0). I'll find the PLC Parent ticket and pull OSRB, Export Compliance, and Legal data from its children.</p>
+          <p className="text-xs text-gray-500 mb-3">Enter an nSpect ID. If it already exists in the table, it will update the row with latest Jira data. Otherwise it creates a new entry.</p>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -243,8 +263,8 @@ export default function NSpectPage() {
               {lookupLoading ? 'Looking up...' : 'Look Up'}
             </button>
           </div>
-          {lookupError && <p className="text-xs text-red-600 mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{lookupError}</p>}
-          {lookupSuccess && <p className="text-xs text-green-600 mt-2 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{lookupSuccess}</p>}
+          {lookupError && <p className="text-xs text-red-600 mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {lookupError}</p>}
+          {lookupSuccess && <p className="text-xs text-green-600 mt-2 flex items-center gap-1"><CheckCircle className="w-3 h-3" /> {lookupSuccess}</p>}
         </div>
       )}
 
@@ -253,7 +273,7 @@ export default function NSpectPage() {
         <div className="mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
           <div className="flex items-center gap-3">
             <input type="text" value={manualEntry.nspectId} onChange={e => setManualEntry(p => ({ ...p, nspectId: e.target.value }))} placeholder="nSpect ID..." className="border border-gray-200 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#76B900]/30" />
-            <input type="text" value={manualEntry.productName} onChange={e => setManualEntry(p => ({ ...p, productName: e.target.value }))} placeholder="Product Name..." className="border border-gray-200 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#76B900]/30" />
+            <input type="text" value={manualEntry.productName} onChange={e => setManualEntry(p => ({ ...p, productName: e.target.value }))} placeholder="Product/Service Name..." className="border border-gray-200 rounded-lg px-3 py-2 text-sm flex-1 focus:outline-none focus:ring-2 focus:ring-[#76B900]/30" />
             <button onClick={addManual} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition">Add</button>
             <button onClick={() => setShowManualAdd(false)} className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition">Cancel</button>
           </div>
@@ -268,7 +288,7 @@ export default function NSpectPage() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search entries..."
+            placeholder="Search by name, nSpect ID, platform..."
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#76B900]/30"
           />
         </div>
@@ -278,7 +298,7 @@ export default function NSpectPage() {
       {filtered.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
           <Shield className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">{entries.length === 0 ? 'No entries yet. Import by nSpect ID or add manually.' : 'No matching entries.'}</p>
+          <p className="text-sm">{entries.length === 0 ? 'No entries yet.' : 'No matching entries.'}</p>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
@@ -286,71 +306,68 @@ export default function NSpectPage() {
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">nSpect ID</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product / Service</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Component / Service</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">PLC Parent</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Security Eng</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">OSRB</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Export Compliance</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Legal</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Platforms</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                <th className="w-16 px-2 py-3"></th>
+                <th className="w-10 px-2 py-3"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(entry => (
                 <tr key={entry.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                  <td className="px-3 py-3 text-sm font-mono text-gray-900 font-medium whitespace-nowrap">
-                    {entry.nspectId || '—'}
+                  <td className="px-3 py-3">
+                    <NSpectIdLink nspectId={entry.nspectId} />
                   </td>
                   <td className="px-3 py-3">
-                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, { productName: e.target.value })} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none min-w-[140px]" placeholder="—" />
+                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none min-w-[160px]" placeholder="—" />
                   </td>
                   <td className="px-3 py-3">
-                    <JiraLink issueKey={entry.parentKey} />
+                    {entry.parentKey ? (
+                      <a href={`https://jirasw.nvidia.com/browse/${entry.parentKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs flex items-center gap-1">
+                        {entry.parentKey}
+                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
+                      </a>
+                    ) : (
+                      <span className="text-gray-300 text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-3">
-                    <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, { securityEngineer: e.target.value })} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[100px]" placeholder="—" />
+                    <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, 'securityEngineer', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[90px]" placeholder="—" />
                   </td>
-                  {/* OSRB */}
                   <td className="px-3 py-3">
-                    <div className="space-y-1">
-                      <JiraLink issueKey={entry.osrb.key} />
-                      <StatusDot status={entry.osrb.status} />
-                      {entry.osrb.link ? <LinkDisplay url={entry.osrb.link} /> : (
-                        <input type="text" value="" onChange={e => updateCategory(entry.id, 'osrb', 'link', e.target.value)} className="w-full bg-transparent text-[10px] text-gray-400 border-0 p-0 focus:outline-none" placeholder="Add link..." />
-                      )}
-                    </div>
+                    {entry.osrbTicket ? (
+                      <NvbugsLink ticketId={entry.osrbTicket} />
+                    ) : (
+                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'osrbTicket', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
+                    )}
                   </td>
-                  {/* Export Compliance */}
                   <td className="px-3 py-3">
-                    <div className="space-y-1">
-                      <JiraLink issueKey={entry.exportCompliance.key} />
-                      <StatusDot status={entry.exportCompliance.status} />
-                      {entry.exportCompliance.link ? <LinkDisplay url={entry.exportCompliance.link} /> : (
-                        <input type="text" value="" onChange={e => updateCategory(entry.id, 'exportCompliance', 'link', e.target.value)} className="w-full bg-transparent text-[10px] text-gray-400 border-0 p-0 focus:outline-none" placeholder="Add link..." />
-                      )}
-                    </div>
+                    {entry.exportCompliance ? (
+                      <NvbugsLink ticketId={entry.exportCompliance} />
+                    ) : (
+                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'exportCompliance', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
+                    )}
                   </td>
-                  {/* Legal */}
                   <td className="px-3 py-3">
-                    <div className="space-y-1">
-                      <JiraLink issueKey={entry.legal.key} />
-                      <StatusDot status={entry.legal.status} />
-                      {entry.legal.link ? <LinkDisplay url={entry.legal.link} /> : (
-                        <input type="text" value="" onChange={e => updateCategory(entry.id, 'legal', 'link', e.target.value)} className="w-full bg-transparent text-[10px] text-gray-400 border-0 p-0 focus:outline-none" placeholder="Add link..." />
-                      )}
-                    </div>
+                    {entry.legalLink ? (
+                      <LinkDisplay url={entry.legalLink} />
+                    ) : (
+                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'legalLink', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
+                    )}
                   </td>
-                  {/* Notes */}
                   <td className="px-3 py-3">
-                    <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, { notes: e.target.value })} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[100px]" placeholder="Add notes..." />
+                    <input type="text" value={entry.platforms} onChange={e => updateEntry(entry.id, 'platforms', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[80px]" placeholder="—" />
                   </td>
-                  {/* Actions */}
+                  <td className="px-3 py-3">
+                    <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, 'notes', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[80px]" placeholder="—" />
+                  </td>
                   <td className="px-2 py-3">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => refreshEntry(entry)} title="Refresh from Jira" className="text-gray-300 hover:text-[#76B900] transition"><RefreshCw className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => deleteEntry(entry.id)} title="Delete" className="text-gray-300 hover:text-red-400 transition"><Trash2 className="w-3.5 h-3.5" /></button>
-                    </div>
+                    <button onClick={() => deleteEntry(entry.id)} title="Delete" className="text-gray-300 hover:text-red-400 transition"><Trash2 className="w-3.5 h-3.5" /></button>
                   </td>
                 </tr>
               ))}
@@ -361,7 +378,7 @@ export default function NSpectPage() {
 
       <div className="mt-3 text-xs text-gray-400">
         {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}
-        {entries.length > 0 && <span className="ml-3">• Data stored locally in browser</span>}
+        {entries.length > 0 && <span className="ml-3">• Data stored locally in browser • Use "Import from Jira" to refresh PLC data</span>}
       </div>
     </div>
   )
