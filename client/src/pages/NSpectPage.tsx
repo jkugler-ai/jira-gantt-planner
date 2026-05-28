@@ -11,7 +11,6 @@ interface NSpectEntry {
   osrbTicket: string
   exportCompliance: string
   legalLink: string
-  platforms: string
   notes: string
   locked: boolean
   eng: string
@@ -72,33 +71,33 @@ function NSpectIdLink({ nspectId, nspectLink }: { nspectId: string; nspectLink: 
 
 // Seed data from OneNote export
 const SEED_DATA: Omit<NSpectEntry, 'id'>[] = [
-  { nspectId: "NSPECT-SRJE-WI5W", nspectLink: "https://nspect.nvidia.com/registration/programs/3395/versions", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-A23X-PJ7A", nspectLink: "https://nspect.nvidia.com/registration/programs/2497/versions", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonDGXC, Kit", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-1P7O-W8EM", nspectLink: "https://nspect.nvidia.com/registration/programs/12879/versions", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-PVEZ-MYOX", nspectLink: "https://nspect.nvidia.com/registration/programs/350/versions", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "Kit, OV RTX", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-Z3RU-SUEX", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-XQPV-EDBQ", nspectLink: "https://nspect.nvidia.com/registration/programs/16176/versions", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-5TC5-EP0X", nspectLink: "https://nspect.nvidia.com/registration/programs/17074/versions", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-XV4E-WJW4", nspectLink: "https://nspect.nvidia.com/registration/programs/12710/versions", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-KETX-8HHI", nspectLink: "https://nspect.nvidia.com/registration/programs/16960/versions", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-E5HZ-J3CI", nspectLink: "https://nspect.nvidia.com/registration/programs/12733/versions", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-36VS-TCJ8", nspectLink: "https://nspect.nvidia.com/registration/programs/15336/versions", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-GIH7-9JFJ", nspectLink: "https://nspect.nvidia.com/registration/programs/16643", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-2PGM-AE57", nspectLink: "https://nspect.nvidia.com/registration/programs/15256/versions", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-B372-3HK0", nspectLink: "https://nspect.nvidia.com/registration/programs/12729/versions", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-JSIR-HO21", nspectLink: "https://nspect.nvidia.com/registration/programs/16642", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-RYHK-7TPB", nspectLink: "https://nspect.nvidia.com/registration/programs/15237/versions", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-YN8F-3UY0", nspectLink: "https://nspect.nvidia.com/registration/programs/17879/versions", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-0IP1-TKSQ", nspectLink: "https://nspect.nvidia.com/registration/programs/20547", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-1RHM-CABY", nspectLink: "https://nspect.nvidia.com/registration/programs/16076/versions", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-G2B8-GZ2M", nspectLink: "https://nspect.nvidia.com/registration/programs/8376", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-EJQD-OLPS", nspectLink: "https://nspect.nvidia.com/registration/programs/20472/versions", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "NSPECT-Y7PS-6K4L", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "", nspectLink: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
-  { nspectId: "", nspectLink: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "Pending nSpect registration", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-SRJE-WI5W", nspectLink: "https://nspect.nvidia.com/registration/programs/3395/versions", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-A23X-PJ7A", nspectLink: "https://nspect.nvidia.com/registration/programs/2497/versions", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-1P7O-W8EM", nspectLink: "https://nspect.nvidia.com/registration/programs/12879/versions", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-PVEZ-MYOX", nspectLink: "https://nspect.nvidia.com/registration/programs/350/versions", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-Z3RU-SUEX", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-XQPV-EDBQ", nspectLink: "https://nspect.nvidia.com/registration/programs/16176/versions", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-5TC5-EP0X", nspectLink: "https://nspect.nvidia.com/registration/programs/17074/versions", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-XV4E-WJW4", nspectLink: "https://nspect.nvidia.com/registration/programs/12710/versions", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-KETX-8HHI", nspectLink: "https://nspect.nvidia.com/registration/programs/16960/versions", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-E5HZ-J3CI", nspectLink: "https://nspect.nvidia.com/registration/programs/12733/versions", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-36VS-TCJ8", nspectLink: "https://nspect.nvidia.com/registration/programs/15336/versions", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-GIH7-9JFJ", nspectLink: "https://nspect.nvidia.com/registration/programs/16643", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-2PGM-AE57", nspectLink: "https://nspect.nvidia.com/registration/programs/15256/versions", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-B372-3HK0", nspectLink: "https://nspect.nvidia.com/registration/programs/12729/versions", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-JSIR-HO21", nspectLink: "https://nspect.nvidia.com/registration/programs/16642", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-RYHK-7TPB", nspectLink: "https://nspect.nvidia.com/registration/programs/15237/versions", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-YN8F-3UY0", nspectLink: "https://nspect.nvidia.com/registration/programs/17879/versions", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-0IP1-TKSQ", nspectLink: "https://nspect.nvidia.com/registration/programs/20547", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-1RHM-CABY", nspectLink: "https://nspect.nvidia.com/registration/programs/16076/versions", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-G2B8-GZ2M", nspectLink: "https://nspect.nvidia.com/registration/programs/8376", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-EJQD-OLPS", nspectLink: "https://nspect.nvidia.com/registration/programs/20472/versions", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-Y7PS-6K4L", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "", nspectLink: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "", nspectLink: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", notes: "Pending nSpect registration", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
 ]
 
-const STORAGE_KEY = 'mission-control-nspect-v5'
+const STORAGE_KEY = 'mission-control-nspect-v6'
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
@@ -174,6 +173,47 @@ export default function NSpectPage() {
     save(entries.map(e => e.id === id ? { ...e, locked: !e.locked } : e))
   }
 
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [bulkProgress, setBulkProgress] = useState('')
+
+  const refreshAllFromJira = async () => {
+    const toRefresh = entries.filter(e => e.nspectId && e.nspectId.startsWith('NSPECT-'))
+    if (toRefresh.length === 0) return
+    setBulkLoading(true)
+    let updated = [...entries]
+    let count = 0
+    for (const entry of toRefresh) {
+      setBulkProgress(`${++count}/${toRefresh.length}: ${entry.nspectId}`)
+      try {
+        const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
+        if (!res.ok) continue
+        const data = await res.json()
+        if (!data.found) continue
+        const fixVersionStr = (data.parent.fixVersions || []).join(', ')
+        const today = todayStr()
+        updated = updated.map(e => {
+          if (e.id !== entry.id) return e
+          if (e.locked) return e // don't touch locked rows
+          return {
+            ...e,
+            parentKey: data.parent.key || e.parentKey,
+            securityEngineer: data.parent.assignee || e.securityEngineer,
+            fixVersion: fixVersionStr || e.fixVersion,
+            osrbTicket: (data.osrb?.link?.match(/\d+$/)?.[0]) || e.osrbTicket,
+            exportCompliance: (data.exportCompliance?.link?.match(/\d+$/)?.[0]) || e.exportCompliance,
+            legalLink: data.legal?.link || e.legalLink,
+            lastUpdated: today,
+          }
+        })
+      } catch {}
+      // Small delay to avoid hammering the API
+      await new Promise(r => setTimeout(r, 500))
+    }
+    save(updated)
+    setBulkLoading(false)
+    setBulkProgress('')
+  }
+
   const lookupNSpect = async () => {
     const id = lookupId.trim()
     if (!id) return
@@ -243,7 +283,6 @@ export default function NSpectPage() {
           osrbTicket: data.osrb?.link?.match(/\d+$/)?.[0] || '',
           exportCompliance: data.exportCompliance?.link?.match(/\d+$/)?.[0] || '',
           legalLink: data.legal?.link || '',
-          platforms: '',
           notes: '',
           locked: false,
           eng: '',
@@ -272,7 +311,6 @@ export default function NSpectPage() {
       osrbTicket: '',
       exportCompliance: '',
       legalLink: '',
-      platforms: '',
       notes: '',
       locked: false,
       eng: '',
@@ -301,7 +339,6 @@ export default function NSpectPage() {
       e.productName.toLowerCase().includes(s) ||
       e.securityEngineer.toLowerCase().includes(s) ||
       e.parentKey.toLowerCase().includes(s) ||
-      e.platforms.toLowerCase().includes(s) ||
       e.eng.toLowerCase().includes(s) ||
       e.notes.toLowerCase().includes(s)
   })
@@ -333,6 +370,9 @@ export default function NSpectPage() {
           </button>
           <button onClick={() => { setShowLookup(!showLookup); setShowManualAdd(false) }} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-2">
             <Download className="w-4 h-4" /> Import from Jira
+          </button>
+          <button onClick={refreshAllFromJira} disabled={bulkLoading} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition flex items-center gap-2">
+            <RefreshCw className={`w-4 h-4 ${bulkLoading ? 'animate-spin' : ''}`} /> {bulkLoading ? bulkProgress : 'Refresh All'}
           </button>
           <button onClick={() => { setShowManualAdd(!showManualAdd); setShowLookup(false) }} className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition flex items-center gap-2">
             <Plus className="w-4 h-4" /> Add Manual
@@ -410,7 +450,6 @@ export default function NSpectPage() {
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Export</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Legal</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fix Version</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Platforms</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Updated</th>
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -464,9 +503,6 @@ export default function NSpectPage() {
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <span className="text-xs text-gray-600">{entry.fixVersion || '—'}</span>
-                  </td>
-                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
-                    <input type="text" value={entry.platforms} onChange={e => updateEntry(entry.id, 'platforms', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, 'notes', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
