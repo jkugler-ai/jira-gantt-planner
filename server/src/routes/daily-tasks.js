@@ -61,6 +61,32 @@ function writeDailyTasks(date, data) {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+// GET /api/daily-tasks/follow-ups/active - Get all incomplete follow-ups across all dates
+router.get('/follow-ups/active', requireAuth, (req, res) => {
+  try {
+    const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json'));
+    const seen = new Set();
+    const followUps = [];
+    // Process newest files first so we get the latest version of each follow-up
+    const sorted = files.sort().reverse();
+    for (const file of sorted) {
+      const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), 'utf-8'));
+      if (data.followUps) {
+        for (const fu of data.followUps) {
+          if (!fu.completed && !seen.has(fu.id)) {
+            seen.add(fu.id);
+            followUps.push({ ...fu, sourceDate: data.date });
+          }
+        }
+      }
+    }
+    res.json({ followUps });
+  } catch (err) {
+    console.error('Active follow-ups error:', err.message);
+    res.status(500).json({ error: 'Failed to fetch follow-ups' });
+  }
+});
+
 // GET /api/daily-tasks/calendar/manual - Get all follow-ups and manual tasks with due dates (for calendar)
 router.get('/calendar/manual', requireAuth, (req, res) => {
   try {

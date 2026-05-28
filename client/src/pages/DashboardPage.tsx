@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { getDefaultQuery } from '../lib/savedQueries'
-import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, Plus, Trash2, Square, CheckSquare } from 'lucide-react'
+import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, ExternalLink, MessageSquare } from 'lucide-react'
 
 const PAGE_DEFAULTS: Record<string, string> = {
   stories: 'project = OMPE AND issuetype = Story AND status != Done ORDER BY cf[13210] ASC, priority ASC',
@@ -19,58 +19,26 @@ interface WeekItem {
   source: 'jira' | 'followup'
 }
 
-interface ManualTask {
+interface FollowUpItem {
   id: string
   title: string
+  source: 'slack' | 'email' | 'other'
   notes: string
   completed: boolean
-  createdAt: string
-  dueDate?: string
+  assignee: string
+  createdDate: string
+  dueDate: string
+  link: string
+  sourceDate: string
 }
-
-const MANUAL_TASKS_KEY = 'mission-control-dashboard-todos'
 
 export default function DashboardPage() {
   const { pageDatasets, setPageDataset } = useFilterContext()
   const [weekItems, setWeekItems] = useState<WeekItem[]>([])
   const [loading, setLoading] = useState(true)
   const [followUps, setFollowUps] = useState<any[]>([])
-  const [manualTasks, setManualTasks] = useState<ManualTask[]>([])
-  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [activeFollowUps, setActiveFollowUps] = useState<FollowUpItem[]>([])
 
-  // Load manual tasks from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(MANUAL_TASKS_KEY)
-      if (stored) setManualTasks(JSON.parse(stored))
-    } catch {}
-  }, [])
-
-  const saveManualTasks = (tasks: ManualTask[]) => {
-    setManualTasks(tasks)
-    localStorage.setItem(MANUAL_TASKS_KEY, JSON.stringify(tasks))
-  }
-
-  const addManualTask = () => {
-    if (!newTaskTitle.trim()) return
-    const task: ManualTask = {
-      id: crypto.randomUUID(),
-      title: newTaskTitle.trim(),
-      notes: '',
-      completed: false,
-      createdAt: new Date().toISOString().slice(0, 10),
-    }
-    saveManualTasks([task, ...manualTasks])
-    setNewTaskTitle('')
-  }
-
-  const toggleManualTask = (id: string) => {
-    saveManualTasks(manualTasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
-  }
-
-  const deleteManualTask = (id: string) => {
-    saveManualTasks(manualTasks.filter(t => t.id !== id))
-  }
 
   const stories = pageDatasets['stories'] || []
   const releases = pageDatasets['releases'] || []
@@ -112,6 +80,12 @@ export default function DashboardPage() {
         if (res.ok) {
           const data = await res.json()
           setFollowUps(data.tasks || [])
+        }
+        // Fetch all active follow-ups for the action items section
+        const fuRes = await fetch('/api/daily-tasks/follow-ups/active', { credentials: 'include' })
+        if (fuRes.ok) {
+          const fuData = await fuRes.json()
+          setActiveFollowUps(fuData.followUps || [])
         }
       } catch (e) {
         console.error('Dashboard load error:', e)
@@ -251,7 +225,7 @@ export default function DashboardPage() {
 
       {/* Past Due Items */}
       {overdue.length > 0 && (
-        <div className="bg-red-50 rounded-xl border border-red-200 p-5 mb-6">
+        <div className="bg-red-50 rounded-xl border border-red-200 p-5 mb-6 max-w-2xl">
           <h2 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-500" />
             Past Due ({overdue.length})
@@ -262,20 +236,17 @@ export default function DashboardPage() {
               .map(item => {
                 const daysLate = Math.ceil((today.getTime() - new Date(item.dueDate!).getTime()) / (1000 * 60 * 60 * 24))
                 return (
-                  <div key={item.key} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <a
-                        href={`https://jirasw.nvidia.com/browse/${item.key}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#76B900] font-medium hover:underline flex-shrink-0"
-                      >
-                        {item.key}
-                      </a>
-                      {item.type && <span className="text-xs text-gray-400 flex-shrink-0">{item.type}</span>}
-                      <span className="text-gray-700 truncate">{item.summary}</span>
-                    </div>
-                    <span className="text-xs text-red-600 font-bold flex-shrink-0 ml-2">{daysLate}d late</span>
+                  <div key={item.key} className="flex items-center gap-3 text-sm">
+                    <a
+                      href={`https://jirasw.nvidia.com/browse/${item.key}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#76B900] font-medium hover:underline flex-shrink-0 w-28"
+                    >
+                      {item.key}
+                    </a>
+                    <span className="text-gray-700 truncate flex-1">{item.summary}</span>
+                    <span className="text-xs text-red-600 font-bold flex-shrink-0">{daysLate}d late</span>
                   </div>
                 )
               })}
@@ -380,41 +351,65 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Manual To-Do List */}
+      {/* Follow-ups & Action Items */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-          <CheckSquare className="w-4 h-4 text-[#76B900]" />
-          Quick To-Do List
+          <MessageSquare className="w-4 h-4 text-purple-500" />
+          Follow-ups & Action Items ({activeFollowUps.length})
         </h2>
-        <div className="flex items-center gap-2 mb-3">
-          <input
-            type="text"
-            value={newTaskTitle}
-            onChange={e => setNewTaskTitle(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addManualTask()}
-            placeholder="Add a task..."
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#76B900]/30"
-          />
-          <button onClick={addManualTask} className="px-3 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-1">
-            <Plus className="w-4 h-4" /> Add
-          </button>
-        </div>
-        {manualTasks.length === 0 ? (
-          <p className="text-sm text-gray-400">No tasks yet. Add one above.</p>
+        {activeFollowUps.length === 0 ? (
+          <p className="text-sm text-gray-400">No active follow-ups. Add them from the Daily Tasks page.</p>
         ) : (
-          <div className="space-y-1">
-            {manualTasks.map(task => (
-              <div key={task.id} className={`flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 group ${task.completed ? 'opacity-50' : ''}`}>
-                <button onClick={() => toggleManualTask(task.id)} className="flex-shrink-0 text-gray-400 hover:text-[#76B900] transition">
-                  {task.completed ? <CheckSquare className="w-4 h-4 text-[#76B900]" /> : <Square className="w-4 h-4" />}
-                </button>
-                <span className={`text-sm flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.title}</span>
-                <span className="text-[10px] text-gray-400 flex-shrink-0">{task.createdAt}</span>
-                <button onClick={() => deleteManualTask(task.id)} className="flex-shrink-0 text-gray-300 hover:text-red-400 transition opacity-0 group-hover:opacity-100">
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))}
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Title</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Assignee</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Due</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeFollowUps
+                  .sort((a, b) => {
+                    // Items with due dates first, sorted by due date
+                    if (a.dueDate && !b.dueDate) return -1
+                    if (!a.dueDate && b.dueDate) return 1
+                    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate)
+                    return b.sourceDate.localeCompare(a.sourceDate)
+                  })
+                  .map(fu => {
+                    const isOverdue = fu.dueDate && new Date(fu.dueDate) < today
+                    return (
+                      <tr key={fu.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${isOverdue ? 'bg-red-50/50' : ''}`}>
+                        <td className="px-3 py-2 text-sm text-gray-800">{fu.title}</td>
+                        <td className="px-3 py-2 text-xs text-gray-600">{fu.assignee || '—'}</td>
+                        <td className="px-3 py-2">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                            fu.source === 'slack' ? 'bg-purple-100 text-purple-700' :
+                            fu.source === 'email' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>{fu.source}</span>
+                        </td>
+                        <td className={`px-3 py-2 text-xs whitespace-nowrap ${isOverdue ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                          {fu.dueDate || '—'}
+                        </td>
+                        <td className="px-3 py-2">
+                          {fu.link ? (
+                            <a href={fu.link} target="_blank" rel="noopener noreferrer" className="text-[#76B900] text-xs hover:underline inline-flex items-center gap-0.5">
+                              Link <ExternalLink className="w-3 h-3" />
+                            </a>
+                          ) : (
+                            <span className="text-xs text-gray-300">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
