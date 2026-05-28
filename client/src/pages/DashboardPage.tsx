@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { getDefaultQuery } from '../lib/savedQueries'
-import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw } from 'lucide-react'
+import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, Plus, Trash2, Square, CheckSquare } from 'lucide-react'
 
 const PAGE_DEFAULTS: Record<string, string> = {
   stories: 'project = OMPE AND issuetype = Story AND status != Done ORDER BY cf[13210] ASC, priority ASC',
@@ -19,11 +19,58 @@ interface WeekItem {
   source: 'jira' | 'followup'
 }
 
+interface ManualTask {
+  id: string
+  title: string
+  notes: string
+  completed: boolean
+  createdAt: string
+  dueDate?: string
+}
+
+const MANUAL_TASKS_KEY = 'mission-control-dashboard-todos'
+
 export default function DashboardPage() {
   const { pageDatasets, setPageDataset } = useFilterContext()
   const [weekItems, setWeekItems] = useState<WeekItem[]>([])
   const [loading, setLoading] = useState(true)
   const [followUps, setFollowUps] = useState<any[]>([])
+  const [manualTasks, setManualTasks] = useState<ManualTask[]>([])
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+
+  // Load manual tasks from localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(MANUAL_TASKS_KEY)
+      if (stored) setManualTasks(JSON.parse(stored))
+    } catch {}
+  }, [])
+
+  const saveManualTasks = (tasks: ManualTask[]) => {
+    setManualTasks(tasks)
+    localStorage.setItem(MANUAL_TASKS_KEY, JSON.stringify(tasks))
+  }
+
+  const addManualTask = () => {
+    if (!newTaskTitle.trim()) return
+    const task: ManualTask = {
+      id: crypto.randomUUID(),
+      title: newTaskTitle.trim(),
+      notes: '',
+      completed: false,
+      createdAt: new Date().toISOString().slice(0, 10),
+    }
+    saveManualTasks([task, ...manualTasks])
+    setNewTaskTitle('')
+  }
+
+  const toggleManualTask = (id: string) => {
+    saveManualTasks(manualTasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
+  }
+
+  const deleteManualTask = (id: string) => {
+    saveManualTasks(manualTasks.filter(t => t.id !== id))
+  }
 
   const stories = pageDatasets['stories'] || []
   const releases = pageDatasets['releases'] || []
@@ -202,6 +249,40 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Past Due Items */}
+      {overdue.length > 0 && (
+        <div className="bg-red-50 rounded-xl border border-red-200 p-5 mb-6">
+          <h2 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-red-500" />
+            Past Due ({overdue.length})
+          </h2>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {overdue
+              .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+              .map(item => {
+                const daysLate = Math.ceil((today.getTime() - new Date(item.dueDate!).getTime()) / (1000 * 60 * 60 * 24))
+                return (
+                  <div key={item.key} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <a
+                        href={`https://jirasw.nvidia.com/browse/${item.key}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#76B900] font-medium hover:underline flex-shrink-0"
+                      >
+                        {item.key}
+                      </a>
+                      {item.type && <span className="text-xs text-gray-400 flex-shrink-0">{item.type}</span>}
+                      <span className="text-gray-700 truncate">{item.summary}</span>
+                    </div>
+                    <span className="text-xs text-red-600 font-bold flex-shrink-0 ml-2">{daysLate}d late</span>
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      )}
+
       {/* This Week Mini Calendar */}
       <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
         <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -214,30 +295,28 @@ export default function DashboardPage() {
             const isToday = dayStr === today.toISOString().slice(0, 10)
             const dayItems = weekItems.filter(i => i.dueDate === dayStr)
             return (
-              <div key={dayStr} className={`rounded-lg border p-3 min-h-[100px] ${isToday ? 'border-[#76B900] bg-[#76B900]/5' : 'border-gray-200'}`}>
+              <div key={dayStr} className={`rounded-lg border p-3 ${isToday ? 'border-[#76B900] bg-[#76B900]/5' : 'border-gray-200'}`}>
                 <div className={`text-xs font-bold mb-2 ${isToday ? 'text-[#76B900]' : 'text-gray-500'}`}>
                   {day.toLocaleDateString('en-US', { weekday: 'short' })} {day.getDate()}
                 </div>
                 <div className="space-y-1">
-                  {dayItems.slice(0, 5).map(item => (
-                    <div key={item.key} className="text-[11px] truncate">
+                  {dayItems.map(item => (
+                    <div key={item.key} className="text-[11px]">
                       {item.source === 'jira' ? (
                         <a
                           href={`https://jirasw.nvidia.com/browse/${item.key}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[#76B900] hover:underline"
+                          title={item.summary}
                         >
                           {item.key}
                         </a>
                       ) : (
-                        <span className="text-purple-600">• {item.summary.slice(0, 25)}</span>
+                        <span className="text-purple-600" title={item.summary}>• {item.summary.slice(0, 30)}</span>
                       )}
                     </div>
                   ))}
-                  {dayItems.length > 5 && (
-                    <div className="text-[10px] text-gray-400">+{dayItems.length - 5} more</div>
-                  )}
                   {dayItems.length === 0 && (
                     <div className="text-[10px] text-gray-300">—</div>
                   )}
@@ -249,7 +328,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Two column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Upcoming Dates */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
@@ -262,7 +341,7 @@ export default function DashboardPage() {
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {upcomingDue
                 .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-                .slice(0, 10)
+                .slice(0, 15)
                 .map(item => (
                   <div key={item.key} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 min-w-0">
@@ -284,36 +363,60 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Overdue / At Risk */}
+        {/* Quick Stats / Stale Items */}
         <div className="bg-white rounded-xl border border-gray-200 p-5">
           <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-red-500" />
-            Overdue / At Risk
+            <Clock className="w-4 h-4 text-amber-500" />
+            Summary
           </h2>
-          {overdue.length === 0 ? (
-            <p className="text-sm text-green-600">All items on schedule ✓</p>
-          ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {overdue.slice(0, 10).map(item => (
-                <div key={item.key} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <a
-                      href={`https://jirasw.nvidia.com/browse/${item.key}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#76B900] font-medium hover:underline flex-shrink-0"
-                    >
-                      {item.key}
-                    </a>
-                    {item.type && <span className="text-xs text-gray-400 flex-shrink-0">{item.type}</span>}
-                    <span className="text-gray-700 truncate">{item.summary}</span>
-                  </div>
-                  <span className="text-xs text-red-600 font-medium flex-shrink-0 ml-2">Due {item.dueDate}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between"><span className="text-gray-600">Total active items</span><span className="font-bold">{totalActive}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">In Progress</span><span className="font-bold text-blue-600">{inProgress.length}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">To Do</span><span className="font-bold text-gray-600">{toDo.length}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Overdue</span><span className="font-bold text-red-600">{overdue.length}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Due next 2 weeks</span><span className="font-bold text-purple-600">{upcomingDue.length}</span></div>
+            <div className="flex justify-between"><span className="text-gray-600">Open Bugs</span><span className="font-bold text-orange-600">{bugs.filter(b => b.statusCategory !== 'done').length}</span></div>
+          </div>
         </div>
+      </div>
+
+      {/* Manual To-Do List */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+          <CheckSquare className="w-4 h-4 text-[#76B900]" />
+          Quick To-Do List
+        </h2>
+        <div className="flex items-center gap-2 mb-3">
+          <input
+            type="text"
+            value={newTaskTitle}
+            onChange={e => setNewTaskTitle(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addManualTask()}
+            placeholder="Add a task..."
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#76B900]/30"
+          />
+          <button onClick={addManualTask} className="px-3 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-1">
+            <Plus className="w-4 h-4" /> Add
+          </button>
+        </div>
+        {manualTasks.length === 0 ? (
+          <p className="text-sm text-gray-400">No tasks yet. Add one above.</p>
+        ) : (
+          <div className="space-y-1">
+            {manualTasks.map(task => (
+              <div key={task.id} className={`flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 group ${task.completed ? 'opacity-50' : ''}`}>
+                <button onClick={() => toggleManualTask(task.id)} className="flex-shrink-0 text-gray-400 hover:text-[#76B900] transition">
+                  {task.completed ? <CheckSquare className="w-4 h-4 text-[#76B900]" /> : <Square className="w-4 h-4" />}
+                </button>
+                <span className={`text-sm flex-1 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}`}>{task.title}</span>
+                <span className="text-[10px] text-gray-400 flex-shrink-0">{task.createdAt}</span>
+                <button onClick={() => deleteManualTask(task.id)} className="flex-shrink-0 text-gray-300 hover:text-red-400 transition opacity-0 group-hover:opacity-100">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
