@@ -486,31 +486,43 @@ router.get('/nspect/lookup', requireAuth, async (req, res) => {
     if (!nspectId) return res.status(400).json({ error: 'nspectId is required' });
 
     // Search for PLC Parent tickets containing the nSpect ID
-    const jql = `project = OMPE AND summary ~ "L1 PLC Parent Task" AND summary ~ "${nspectId}" ORDER BY created DESC`;
+    const jql = `project = OMPE AND summary ~ "PLC Parent Task" AND summary ~ "${nspectId}" ORDER BY created DESC`;
+    const fields = 'summary,status,assignee,subtasks,issuelinks,description,fixVersions';
     const searchRes = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=5&fields=summary,status,assignee,subtasks,issuelinks,description`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=10&fields=${fields}`
     );
 
-    const parents = searchRes.data.issues || [];
+    let parents = searchRes.data.issues || [];
     if (parents.length === 0) {
       // Also try text search in case nSpect ID is in description or custom field
       const altJql = `project = OMPE AND text ~ "${nspectId}" AND summary ~ "PLC Parent" ORDER BY created DESC`;
       const altRes = await jiraRequest(req, 'GET',
-        `/search?jql=${encodeURIComponent(altJql)}&maxResults=5&fields=summary,status,assignee,subtasks,issuelinks,description`
+        `/search?jql=${encodeURIComponent(altJql)}&maxResults=10&fields=${fields}`
       );
       if ((altRes.data.issues || []).length === 0) {
         return res.json({ found: false, nspectId, message: 'No PLC Parent ticket found for this nSpect ID' });
       }
-      parents.push(...altRes.data.issues);
+      parents = altRes.data.issues;
     }
 
+    // Most recent parent first
     const parent = parents[0];
+    const fixVersions = (parent.fields.fixVersions || []).map(fv => fv.name);
     const parentData = {
       key: parent.key,
       summary: parent.fields.summary,
       status: parent.fields.status?.name,
       assignee: parent.fields.assignee?.displayName || 'Unassigned',
+      fixVersions,
     };
+
+    // All parent versions for history
+    const allParents = parents.map(p => ({
+      key: p.key,
+      summary: p.fields.summary,
+      status: p.fields.status?.name,
+      fixVersions: (p.fields.fixVersions || []).map(fv => fv.name),
+    }));
 
     // Get children: subtasks + blocked-by links
     const subtasks = parent.fields.subtasks || [];
@@ -560,6 +572,7 @@ router.get('/nspect/lookup', requireAuth, async (req, res) => {
       found: true,
       nspectId,
       parent: parentData,
+      allParents,
       osrb: null,
       exportCompliance: null,
       legal: null,

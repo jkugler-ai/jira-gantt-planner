@@ -13,47 +13,48 @@ interface NSpectEntry {
   legalLink: string
   platforms: string
   notes: string
-  locked: boolean  // when locked, updates clone instead of edit
+  locked: boolean
+  eng: string
+  fixVersion: string
+  lastUpdated: string
 }
 
-function LinkDisplay({ url }: { url: string }) {
-  if (!url) return <span className="text-gray-300">—</span>
-  let display = url
-  try {
-    if (url.includes('nvbugs')) {
-      const match = url.match(/\/bug\/(\d+)/)
-      display = match ? match[1] : url
-    } else if (url.includes('nspect.nvidia.com')) {
-      const match = url.match(/\/(\d+)(?:\/|$)/)
-      display = match ? match[1] : url.split('/').filter(Boolean).pop() || url
-    } else if (url.includes('jirasw.nvidia.com/browse/')) {
-      display = url.split('/browse/')[1] || url
-    } else {
-      display = url.length > 30 ? url.slice(0, 30) + '…' : url
-    }
-  } catch {}
+function MultiLinkDisplay({ value, type }: { value: string; type: 'nvbugs' | 'nspect' | 'jira' }) {
+  if (!value) return <span className="text-gray-300">—</span>
+  const items = value.split(',').map(s => s.trim()).filter(Boolean)
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
-      {display}
-      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-    </a>
-  )
-}
-
-function NvbugsLink({ ticketId }: { ticketId: string }) {
-  if (!ticketId) return <span className="text-gray-300">—</span>
-  if (ticketId.includes('multiple')) {
-    return <span className="text-xs text-gray-500 break-words">{ticketId}</span>
-  }
-  const ids = ticketId.split(',').map(s => s.trim()).filter(Boolean)
-  return (
-    <div className="space-y-0.5">
-      {ids.map(id => (
-        <a key={id} href={`https://nvbugspro.nvidia.com/bug/${id}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
-          {id}
-          <ExternalLink className="w-3 h-3 flex-shrink-0" />
-        </a>
-      ))}
+    <div className="flex flex-wrap gap-1">
+      {items.map((item, i) => {
+        let url = item
+        let display = item
+        if (type === 'nvbugs') {
+          // item is a numeric ID or a full URL
+          const idMatch = item.match(/(\d+)/)
+          const id = idMatch ? idMatch[1] : item
+          url = `https://nvbugspro.nvidia.com/bug/${id}`
+          display = id
+        } else if (type === 'nspect') {
+          // item is a full URL - shorten it
+          url = item
+          const match = item.match(/\/(\d+)(?:\/|$)/)
+          if (match) {
+            display = match[1]
+          } else {
+            const parts = item.split('/').filter(Boolean)
+            display = parts[parts.length - 1] || item
+            if (display.length > 20) display = display.slice(0, 20) + '…'
+          }
+        } else if (type === 'jira') {
+          url = `https://jirasw.nvidia.com/browse/${item}`
+          display = item
+        }
+        return (
+          <a key={`${item}-${i}`} href={url} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-0.5 whitespace-nowrap">
+            {display}
+            <ExternalLink className="w-3 h-3 flex-shrink-0" />
+          </a>
+        )
+      })}
     </div>
   )
 }
@@ -62,7 +63,7 @@ function NSpectIdLink({ nspectId, nspectLink }: { nspectId: string; nspectLink: 
   if (!nspectId) return <span className="text-sm font-mono text-gray-400">—</span>
   const url = nspectLink || `https://nspect.nvidia.com/registrations?search=${encodeURIComponent(nspectId)}`
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline inline-flex items-center gap-1 whitespace-nowrap">
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline inline-flex items-center gap-1">
       {nspectId}
       <ExternalLink className="w-3 h-3 flex-shrink-0" />
     </a>
@@ -71,33 +72,37 @@ function NSpectIdLink({ nspectId, nspectLink }: { nspectId: string; nspectLink: 
 
 // Seed data from OneNote export
 const SEED_DATA: Omit<NSpectEntry, 'id'>[] = [
-  { nspectId: "NSPECT-SRJE-WI5W", nspectLink: "https://nspect.nvidia.com/registration/programs/3395/versions", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-A23X-PJ7A", nspectLink: "https://nspect.nvidia.com/registration/programs/2497/versions", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonDGXC, Kit", notes: "", locked: false },
-  { nspectId: "NSPECT-1P7O-W8EM", nspectLink: "https://nspect.nvidia.com/registration/programs/12879/versions", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-PVEZ-MYOX", nspectLink: "https://nspect.nvidia.com/registration/programs/350/versions", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "Kit, OV RTX", notes: "", locked: false },
-  { nspectId: "NSPECT-Z3RU-SUEX", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-XQPV-EDBQ", nspectLink: "https://nspect.nvidia.com/registration/programs/16176/versions", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-5TC5-EP0X", nspectLink: "https://nspect.nvidia.com/registration/programs/17074/versions", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-XV4E-WJW4", nspectLink: "https://nspect.nvidia.com/registration/programs/12710/versions", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-KETX-8HHI", nspectLink: "https://nspect.nvidia.com/registration/programs/16960/versions", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-E5HZ-J3CI", nspectLink: "https://nspect.nvidia.com/registration/programs/12733/versions", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-36VS-TCJ8", nspectLink: "https://nspect.nvidia.com/registration/programs/15336/versions", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-GIH7-9JFJ", nspectLink: "https://nspect.nvidia.com/registration/programs/16643", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-2PGM-AE57", nspectLink: "https://nspect.nvidia.com/registration/programs/15256/versions", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-B372-3HK0", nspectLink: "https://nspect.nvidia.com/registration/programs/12729/versions", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-JSIR-HO21", nspectLink: "https://nspect.nvidia.com/registration/programs/16642", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-RYHK-7TPB", nspectLink: "https://nspect.nvidia.com/registration/programs/15237/versions", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-YN8F-3UY0", nspectLink: "https://nspect.nvidia.com/registration/programs/17879/versions", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-0IP1-TKSQ", nspectLink: "https://nspect.nvidia.com/registration/programs/20547", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-1RHM-CABY", nspectLink: "https://nspect.nvidia.com/registration/programs/16076/versions", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-G2B8-GZ2M", nspectLink: "https://nspect.nvidia.com/registration/programs/8376", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "NSPECT-EJQD-OLPS", nspectLink: "https://nspect.nvidia.com/registration/programs/20472/versions", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
-  { nspectId: "NSPECT-Y7PS-6K4L", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
-  { nspectId: "", nspectLink: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
-  { nspectId: "", nspectLink: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "Pending nSpect registration", locked: false },
+  { nspectId: "NSPECT-SRJE-WI5W", nspectLink: "https://nspect.nvidia.com/registration/programs/3395/versions", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-A23X-PJ7A", nspectLink: "https://nspect.nvidia.com/registration/programs/2497/versions", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonDGXC, Kit", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-1P7O-W8EM", nspectLink: "https://nspect.nvidia.com/registration/programs/12879/versions", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-PVEZ-MYOX", nspectLink: "https://nspect.nvidia.com/registration/programs/350/versions", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "Kit, OV RTX", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-Z3RU-SUEX", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-XQPV-EDBQ", nspectLink: "https://nspect.nvidia.com/registration/programs/16176/versions", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-5TC5-EP0X", nspectLink: "https://nspect.nvidia.com/registration/programs/17074/versions", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-XV4E-WJW4", nspectLink: "https://nspect.nvidia.com/registration/programs/12710/versions", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-KETX-8HHI", nspectLink: "https://nspect.nvidia.com/registration/programs/16960/versions", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-E5HZ-J3CI", nspectLink: "https://nspect.nvidia.com/registration/programs/12733/versions", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-36VS-TCJ8", nspectLink: "https://nspect.nvidia.com/registration/programs/15336/versions", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-GIH7-9JFJ", nspectLink: "https://nspect.nvidia.com/registration/programs/16643", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-2PGM-AE57", nspectLink: "https://nspect.nvidia.com/registration/programs/15256/versions", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-B372-3HK0", nspectLink: "https://nspect.nvidia.com/registration/programs/12729/versions", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-JSIR-HO21", nspectLink: "https://nspect.nvidia.com/registration/programs/16642", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-RYHK-7TPB", nspectLink: "https://nspect.nvidia.com/registration/programs/15237/versions", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-YN8F-3UY0", nspectLink: "https://nspect.nvidia.com/registration/programs/17879/versions", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-0IP1-TKSQ", nspectLink: "https://nspect.nvidia.com/registration/programs/20547", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-1RHM-CABY", nspectLink: "https://nspect.nvidia.com/registration/programs/16076/versions", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-G2B8-GZ2M", nspectLink: "https://nspect.nvidia.com/registration/programs/8376", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-EJQD-OLPS", nspectLink: "https://nspect.nvidia.com/registration/programs/20472/versions", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "NSPECT-Y7PS-6K4L", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "", nspectLink: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
+  { nspectId: "", nspectLink: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "Pending nSpect registration", locked: false, eng: "", fixVersion: "", lastUpdated: "" },
 ]
 
-const STORAGE_KEY = 'mission-control-nspect-v4'
+const STORAGE_KEY = 'mission-control-nspect-v5'
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10)
+}
 
 export default function NSpectPage() {
   const [entries, setEntries] = useState<NSpectEntry[]>([])
@@ -118,8 +123,14 @@ export default function NSpectPage() {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
-        // Migrate: add locked field if missing
-        setEntries(parsed.map((e: any) => ({ ...e, locked: e.locked ?? false })))
+        // Migrate: add new fields if missing
+        setEntries(parsed.map((e: any) => ({
+          ...e,
+          locked: e.locked ?? false,
+          eng: e.eng ?? '',
+          fixVersion: e.fixVersion ?? '',
+          lastUpdated: e.lastUpdated ?? '',
+        })))
       } else {
         const seeded = SEED_DATA.map(s => ({ ...s, id: crypto.randomUUID() }))
         setEntries(seeded)
@@ -130,11 +141,10 @@ export default function NSpectPage() {
 
   const save = (updated: NSpectEntry[], pushUndo = true) => {
     if (pushUndo && entries.length > 0) {
-      setUndoStack(prev => [...prev.slice(-19), entries]) // keep last 20 states
+      setUndoStack(prev => [...prev.slice(-19), entries])
     }
     setEntries(updated)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-    // Flash save indicator
     setSaveFlash(true)
     setTimeout(() => setSaveFlash(false), 1500)
   }
@@ -152,6 +162,7 @@ export default function NSpectPage() {
       ...entry,
       id: crypto.randomUUID(),
       notes: entry.notes ? `(cloned) ${entry.notes}` : '(cloned)',
+      lastUpdated: todayStr(),
     }
     const idx = entries.findIndex(e => e.id === entry.id)
     const updated = [...entries]
@@ -182,6 +193,9 @@ export default function NSpectPage() {
         return
       }
 
+      const fixVersionStr = (data.parent.fixVersions || []).join(', ')
+      const today = todayStr()
+
       const existing = entries.find(e => e.nspectId.toLowerCase() === id.toLowerCase())
       if (existing) {
         if (existing.locked) {
@@ -194,8 +208,10 @@ export default function NSpectPage() {
             osrbTicket: data.osrb?.link?.match(/\d+$/)?.[0] || existing.osrbTicket,
             exportCompliance: data.exportCompliance?.link?.match(/\d+$/)?.[0] || existing.exportCompliance,
             legalLink: data.legal?.link || existing.legalLink,
-            notes: `Updated ${new Date().toISOString().slice(0, 10)}`,
+            fixVersion: fixVersionStr || existing.fixVersion,
+            notes: `Updated ${today}`,
             locked: false,
+            lastUpdated: today,
           }
           const idx = entries.findIndex(e => e.id === existing.id)
           const updated = [...entries]
@@ -207,6 +223,8 @@ export default function NSpectPage() {
           const updates: Partial<NSpectEntry> = {
             parentKey: data.parent.key,
             securityEngineer: data.parent.assignee || existing.securityEngineer,
+            fixVersion: fixVersionStr || existing.fixVersion,
+            lastUpdated: today,
           }
           if (data.osrb) updates.osrbTicket = data.osrb.link?.match(/\d+$/)?.[0] || existing.osrbTicket
           if (data.exportCompliance) updates.exportCompliance = data.exportCompliance.link?.match(/\d+$/)?.[0] || existing.exportCompliance
@@ -228,6 +246,9 @@ export default function NSpectPage() {
           platforms: '',
           notes: '',
           locked: false,
+          eng: '',
+          fixVersion: fixVersionStr,
+          lastUpdated: today,
         }
         save([entry, ...entries])
         setLookupSuccess(`Added "${entry.productName}" from ${data.parent.key}`)
@@ -254,6 +275,9 @@ export default function NSpectPage() {
       platforms: '',
       notes: '',
       locked: false,
+      eng: '',
+      fixVersion: '',
+      lastUpdated: todayStr(),
     }
     save([entry, ...entries])
     setManualEntry({ nspectId: '', productName: '' })
@@ -261,7 +285,7 @@ export default function NSpectPage() {
   }
 
   const updateEntry = (id: string, field: keyof NSpectEntry, value: string) => {
-    save(entries.map(e => e.id === id ? { ...e, [field]: value } : e))
+    save(entries.map(e => e.id === id ? { ...e, [field]: value, lastUpdated: todayStr() } : e))
   }
 
   const deleteEntry = (id: string) => {
@@ -278,6 +302,7 @@ export default function NSpectPage() {
       e.securityEngineer.toLowerCase().includes(s) ||
       e.parentKey.toLowerCase().includes(s) ||
       e.platforms.toLowerCase().includes(s) ||
+      e.eng.toLowerCase().includes(s) ||
       e.notes.toLowerCase().includes(s)
   })
 
@@ -293,13 +318,11 @@ export default function NSpectPage() {
           <p className="text-gray-500 text-sm mt-1">PLC compliance — {entries.length} registrations tracked</p>
         </div>
         <div className="flex gap-2 items-center">
-          {/* Save indicator */}
           {saveFlash && (
             <span className="text-xs text-green-600 flex items-center gap-1 animate-pulse">
               <CheckCircle className="w-3 h-3" /> Saved
             </span>
           )}
-          {/* Undo button */}
           <button
             onClick={undo}
             disabled={undoStack.length === 0}
@@ -361,7 +384,7 @@ export default function NSpectPage() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, nSpect ID, platform..."
+            placeholder="Search by name, nSpect ID, platform, engineer..."
             className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#76B900]/30"
           />
         </div>
@@ -375,43 +398,34 @@ export default function NSpectPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-left table-fixed">
-            <colgroup>
-              <col className="w-[160px]" />
-              <col className="w-[200px]" />
-              <col className="w-[110px]" />
-              <col className="w-[130px]" />
-              <col className="w-[100px]" />
-              <col className="w-[100px]" />
-              <col className="w-[100px]" />
-              <col className="w-[120px]" />
-              <col className="w-[150px]" />
-              <col className="w-[80px]" />
-            </colgroup>
+          <table className="w-full text-left table-auto">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">nSpect ID</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Component / Service</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">PLC Parent</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Security Eng</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eng</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">OSRB</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Export</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Legal</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fix Version</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Platforms</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Updated</th>
                 <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(entry => (
                 <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${entry.locked ? 'bg-amber-50/50' : ''}`}>
-                  <td className="px-3 py-3 align-top">
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <NSpectIdLink nspectId={entry.nspectId} nspectLink={entry.nspectLink} />
                   </td>
-                  <td className="px-3 py-3 align-top">
-                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none break-words" placeholder="—" style={{ wordBreak: 'break-word' }} />
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
+                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
                   </td>
-                  <td className="px-3 py-3 align-top">
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     {entry.parentKey ? (
                       <a href={`https://jirasw.nvidia.com/browse/${entry.parentKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
                         {entry.parentKey}
@@ -421,35 +435,44 @@ export default function NSpectPage() {
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'parentKey', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="OMPE-..." />
                     )}
                   </td>
-                  <td className="px-3 py-3 align-top">
-                    <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, 'securityEngineer', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none break-words" placeholder="—" />
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
+                    <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, 'securityEngineer', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
                   </td>
-                  <td className="px-3 py-3 align-top">
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
+                    <input type="text" value={entry.eng} onChange={e => updateEntry(entry.id, 'eng', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
+                  </td>
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     {entry.osrbTicket ? (
-                      <NvbugsLink ticketId={entry.osrbTicket} />
+                      <MultiLinkDisplay value={entry.osrbTicket} type="nvbugs" />
                     ) : (
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'osrbTicket', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
                     )}
                   </td>
-                  <td className="px-3 py-3 align-top">
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     {entry.exportCompliance ? (
-                      <NvbugsLink ticketId={entry.exportCompliance} />
+                      <MultiLinkDisplay value={entry.exportCompliance} type="nvbugs" />
                     ) : (
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'exportCompliance', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
                     )}
                   </td>
-                  <td className="px-3 py-3 align-top">
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     {entry.legalLink ? (
-                      <LinkDisplay url={entry.legalLink} />
+                      <MultiLinkDisplay value={entry.legalLink} type="nspect" />
                     ) : (
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'legalLink', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
                     )}
                   </td>
-                  <td className="px-3 py-3 align-top">
-                    <input type="text" value={entry.platforms} onChange={e => updateEntry(entry.id, 'platforms', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none break-words" placeholder="—" />
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
+                    <span className="text-xs text-gray-600">{entry.fixVersion || '—'}</span>
                   </td>
-                  <td className="px-3 py-3 align-top">
-                    <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, 'notes', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none break-words" placeholder="—" />
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
+                    <input type="text" value={entry.platforms} onChange={e => updateEntry(entry.id, 'platforms', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
+                  </td>
+                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
+                    <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, 'notes', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
+                  </td>
+                  <td className="px-3 py-3 align-top whitespace-nowrap">
+                    <span className="text-xs text-gray-400">{entry.lastUpdated || '—'}</span>
                   </td>
                   <td className="px-2 py-3 align-top">
                     <div className="flex items-center gap-1">
