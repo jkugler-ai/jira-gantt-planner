@@ -82,10 +82,12 @@ export default function DashboardPage() {
 
     const items: WeekItem[] = []
 
-    // Jira items with due dates this week
+    // Jira items with due dates this week (deduplicate by key)
+    const seen = new Set<string>()
     const allItems = [...stories, ...releases, ...sprintGoals, ...bugs]
     for (const item of allItems) {
-      if (item.dueDate) {
+      if (item.dueDate && !seen.has(item.key)) {
+        seen.add(item.key)
         const d = new Date(item.dueDate)
         if (d >= startOfWeek && d <= endOfWeek && item.statusCategory !== 'done') {
           items.push({ key: item.key, summary: item.summary, dueDate: item.dueDate, type: item.type, source: 'jira' })
@@ -93,9 +95,10 @@ export default function DashboardPage() {
       }
     }
 
-    // Follow-ups with due dates this week
+    // Follow-ups with due dates this week (deduplicate by id)
     for (const fu of followUps) {
-      if (fu.dueDate) {
+      if (fu.dueDate && !seen.has(fu.id)) {
+        seen.add(fu.id)
         const d = new Date(fu.dueDate)
         if (d >= startOfWeek && d <= endOfWeek) {
           items.push({ key: fu.id, summary: fu.title, dueDate: fu.dueDate, source: 'followup' })
@@ -271,6 +274,7 @@ export default function DashboardPage() {
                       >
                         {item.key}
                       </a>
+                      {item.type && <span className="text-xs text-gray-400 flex-shrink-0">{item.type}</span>}
                       <span className="text-gray-700 truncate">{item.summary}</span>
                     </div>
                     <span className="text-xs text-purple-600 font-medium flex-shrink-0 ml-2">{item.dueDate}</span>
@@ -301,6 +305,7 @@ export default function DashboardPage() {
                     >
                       {item.key}
                     </a>
+                    {item.type && <span className="text-xs text-gray-400 flex-shrink-0">{item.type}</span>}
                     <span className="text-gray-700 truncate">{item.summary}</span>
                   </div>
                   <span className="text-xs text-red-600 font-medium flex-shrink-0 ml-2">Due {item.dueDate}</span>
