@@ -99,6 +99,55 @@ const SEED_DATA: Omit<NSpectEntry, 'id'>[] = [
 
 const STORAGE_KEY = 'mission-control-nspect-v6'
 
+function ParentKeyCell({ entry, onSave }: { entry: NSpectEntry; onSave: (id: string, key: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(entry.parentKey || '')
+
+  useEffect(() => {
+    setDraft(entry.parentKey || '')
+  }, [entry.parentKey])
+
+  if (!editing && entry.parentKey) {
+    return (
+      <div className="flex items-center gap-1">
+        <a href={`https://jirasw.nvidia.com/browse/${entry.parentKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
+          {entry.parentKey}
+          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+        </a>
+        <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-gray-500 transition" title="Edit parent key">
+          <span className="text-[10px]">✏️</span>
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <input
+      type="text"
+      value={draft}
+      autoFocus={editing}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={() => {
+        const trimmed = draft.trim()
+        if (trimmed !== entry.parentKey) {
+          onSave(entry.id, trimmed)
+        }
+        setEditing(false)
+      }}
+      onKeyDown={e => {
+        if (e.key === 'Enter') {
+          (e.target as HTMLInputElement).blur()
+        } else if (e.key === 'Escape') {
+          setDraft(entry.parentKey || '')
+          setEditing(false)
+        }
+      }}
+      className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none"
+      placeholder="OMPE-... (Enter to save & fetch)"
+    />
+  )
+}
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -584,14 +633,7 @@ export default function NSpectPage() {
                     <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
-                    {entry.parentKey ? (
-                      <a href={`https://jirasw.nvidia.com/browse/${entry.parentKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
-                        {entry.parentKey}
-                        <ExternalLink className="w-3 h-3 flex-shrink-0" />
-                      </a>
-                    ) : (
-                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'parentKey', e.target.value)} onBlur={e => { if (e.target.value.match(/^[A-Z]+-\d+$/)) fetchByParentKey(entry.id, e.target.value) }} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="OMPE-... (fetches on tab out)" />
-                    )}
+                    <ParentKeyCell entry={entry} onSave={(id, key) => { updateEntry(id, 'parentKey', key); if (key.match(/^[A-Z]+-\d+$/)) fetchByParentKey(id, key) }} />
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, 'securityEngineer', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
