@@ -479,4 +479,109 @@ router.post('/transitions/:key', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/jira/nspect/lookup - Look up PLC parent by nSpect ID and pull categorized child data
+router.get('/nspect/lookup', requireAuth, async (req, res) => {
+  try {
+    const { nspectId } = req.query;
+    if (!nspectId) return res.status(400).json({ error: 'nspectId is required' });
+
+    // Search for PLC Parent tickets containing the nSpect ID
+    const jql = `project = OMPE AND summary ~ "L1 PLC Parent Task" AND summary ~ "${nspectId}" ORDER BY created DESC`;
+    const searchRes = await jiraRequest(req, 'GET',
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=5&fields=summary,status,assignee,subtasks,issuelinks,description`
+    );
+
+    const parents = searchRes.data.issues || [];
+    if (parents.length === 0) {
+      // Also try text search in case nSpect ID is in description or custom field
+      const altJql = `project = OMPE AND text ~ "${nspectId}" AND summary ~ "PLC Parent" ORDER BY created DESC`;
+      const altRes = await jiraRequest(req, 'GET',
+        `/search?jql=${encodeURIComponent(altJql)}&maxResults=5&fields=summary,status,assignee,subtasks,issuelinks,description`
+      );
+      if ((altRes.data.issues || []).length === 0) {
+        return res.json({ found: false, nspectId, message: 'No PLC Parent ticket found for this nSpect ID' });
+      }
+      parents.push(...altRes.data.issues);
+    }
+
+    const parent = parents[0];
+    const parentData = {
+      key: parent.key,
+      summary: parent.fields.summary,
+      status: parent.fields.status?.name,
+      assignee: parent.fields.assignee?.displayName || 'Unassigned',
+    };
+
+    // Get children: subtasks + blocked-by links
+    const subtasks = parent.fields.subtasks || [];
+    const links = parent.fields.issuelinks || [];
+    const blockerKeys = links
+      .filter(l => l.type.name === 'Blocks' && l.inwardIssue)
+      .map(l => l.inwardIssue.key);
+    const childKeys = [...subtasks.map(s => s.key), ...blockerKeys];
+
+    // Fetch full details of each child to get their links and descriptions
+    const children = [];
+    for (const childKey of childKeys) {
+      try {
+        const childRes = await jiraRequest(req, 'GET',
+          `/issue/${childKey}?fields=summary,status,assignee,description,issuelinks,comment`
+        );
+        const cf = childRes.data.fields;
+        // Extract external links from description and comments
+        const allText = (cf.description || '') + ' ' + 
+          (cf.comment?.comments || []).map(c => c.body || '').join(' ');
+        
+        // Find nvbugs links
+        const nvbugsMatches = allText.match(/https?:\/\/nvbugs(?:pro)?\.nvidia\.com\/bug\/\d+/g) || [];
+        // Find nspect links  
+        const nspectMatches = allText.match(/https?:\/\/nspect\.nvidia\.com\/[^\s|\])}"<>]+/g) || [];
+        // Find jirasw links from issue links
+        const jiraLinks = (cf.issuelinks || [])
+          .map(l => l.outwardIssue?.key || l.inwardIssue?.key)
+          .filter(Boolean);
+
+        children.push({
+          key: childRes.data.key,
+          summary: cf.summary,
+          status: cf.status?.name,
+          assignee: cf.assignee?.displayName || 'Unassigned',
+          nvbugsLinks: [...new Set(nvbugsMatches)],
+          nspectLinks: [...new Set(nspectMatches)],
+          jiraLinks,
+        });
+      } catch (childErr) {
+        children.push({ key: childKey, summary: '(failed to load)', status: 'unknown', assignee: '', nvbugsLinks: [], nspectLinks: [], jiraLinks: [] });
+      }
+    }
+
+    // Categorize children by summary keywords
+    const result = {
+      found: true,
+      nspectId,
+      parent: parentData,
+      osrb: null,
+      exportCompliance: null,
+      legal: null,
+      children,
+    };
+
+    for (const child of children) {
+      const s = child.summary.toLowerCase();
+      if (s.includes('oss license') || s.includes('osrb') || s.includes('oss vuln')) {
+        result.osrb = { ...child, link: child.nvbugsLinks[0] || child.nspectLinks[0] || '' };
+      } else if (s.includes('export compliance') || s.includes('eccn') || s.includes('export')) {
+        result.exportCompliance = { ...child, link: child.nvbugsLinks[0] || child.nspectLinks[0] || '' };
+      } else if (s.includes('legal') && (s.includes('product') || s.includes('terms') || s.includes('user acceptance'))) {
+        result.legal = { ...child, link: child.nspectLinks[0] || child.nvbugsLinks[0] || '' };
+      }
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('NSpect lookup error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to look up nSpect data' });
+  }
+});
+
 module.exports = router;
