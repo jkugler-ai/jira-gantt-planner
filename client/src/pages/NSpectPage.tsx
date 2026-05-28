@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Shield, Plus, Trash2, Search, ExternalLink, Download, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
+import { Shield, Plus, Trash2, Search, ExternalLink, Download, RefreshCw, AlertCircle, CheckCircle, Copy, Lock, Unlock, Undo2 } from 'lucide-react'
 
 interface NSpectEntry {
   id: string
@@ -13,11 +13,12 @@ interface NSpectEntry {
   legalLink: string
   platforms: string
   notes: string
+  locked: boolean  // when locked, updates clone instead of edit
 }
 
-function LinkDisplay({ url, label }: { url: string; label?: string }) {
+function LinkDisplay({ url }: { url: string }) {
   if (!url) return <span className="text-gray-300">—</span>
-  let display = label || url
+  let display = url
   try {
     if (url.includes('nvbugs')) {
       const match = url.match(/\/bug\/(\d+)/)
@@ -32,7 +33,7 @@ function LinkDisplay({ url, label }: { url: string; label?: string }) {
     }
   } catch {}
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs flex items-center gap-1">
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
       {display}
       <ExternalLink className="w-3 h-3 flex-shrink-0" />
     </a>
@@ -41,16 +42,14 @@ function LinkDisplay({ url, label }: { url: string; label?: string }) {
 
 function NvbugsLink({ ticketId }: { ticketId: string }) {
   if (!ticketId) return <span className="text-gray-300">—</span>
-  // Handle "multiple (range)" case
   if (ticketId.includes('multiple')) {
-    return <span className="text-xs text-gray-500">{ticketId}</span>
+    return <span className="text-xs text-gray-500 break-words">{ticketId}</span>
   }
-  // Could be comma-separated
   const ids = ticketId.split(',').map(s => s.trim()).filter(Boolean)
   return (
     <div className="space-y-0.5">
       {ids.map(id => (
-        <a key={id} href={`https://nvbugspro.nvidia.com/bug/${id}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs flex items-center gap-1">
+        <a key={id} href={`https://nvbugspro.nvidia.com/bug/${id}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
           {id}
           <ExternalLink className="w-3 h-3 flex-shrink-0" />
         </a>
@@ -60,10 +59,10 @@ function NvbugsLink({ ticketId }: { ticketId: string }) {
 }
 
 function NSpectIdLink({ nspectId, nspectLink }: { nspectId: string; nspectLink: string }) {
-  if (!nspectId) return <span className="text-sm font-mono text-gray-900 font-medium">—</span>
+  if (!nspectId) return <span className="text-sm font-mono text-gray-400">—</span>
   const url = nspectLink || `https://nspect.nvidia.com/registrations?search=${encodeURIComponent(nspectId)}`
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline flex items-center gap-1 whitespace-nowrap">
+    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline inline-flex items-center gap-1 whitespace-nowrap">
       {nspectId}
       <ExternalLink className="w-3 h-3 flex-shrink-0" />
     </a>
@@ -72,31 +71,33 @@ function NSpectIdLink({ nspectId, nspectLink }: { nspectId: string; nspectLink: 
 
 // Seed data from OneNote export
 const SEED_DATA: Omit<NSpectEntry, 'id'>[] = [
-  { nspectId: "NSPECT-SRJE-WI5W", nspectLink: "https://nspect.nvidia.com/registration/programs/3395/versions", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-A23X-PJ7A", nspectLink: "https://nspect.nvidia.com/registration/programs/2497/versions", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonDGXC, Kit", notes: "" },
-  { nspectId: "NSPECT-1P7O-W8EM", nspectLink: "https://nspect.nvidia.com/registration/programs/12879/versions", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-PVEZ-MYOX", nspectLink: "https://nspect.nvidia.com/registration/programs/350/versions", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "Kit, OV RTX", notes: "" },
-  { nspectId: "NSPECT-Z3RU-SUEX", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", platforms: "", notes: "" },
-  { nspectId: "NSPECT-XQPV-EDBQ", nspectLink: "https://nspect.nvidia.com/registration/programs/16176/versions", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-5TC5-EP0X", nspectLink: "https://nspect.nvidia.com/registration/programs/17074/versions", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-XV4E-WJW4", nspectLink: "https://nspect.nvidia.com/registration/programs/12710/versions", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", platforms: "", notes: "" },
-  { nspectId: "NSPECT-KETX-8HHI", nspectLink: "https://nspect.nvidia.com/registration/programs/16960/versions", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", platforms: "", notes: "" },
-  { nspectId: "NSPECT-E5HZ-J3CI", nspectLink: "https://nspect.nvidia.com/registration/programs/12733/versions", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", platforms: "", notes: "" },
-  { nspectId: "NSPECT-36VS-TCJ8", nspectLink: "https://nspect.nvidia.com/registration/programs/15336/versions", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-GIH7-9JFJ", nspectLink: "https://nspect.nvidia.com/registration/programs/16643", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", platforms: "", notes: "" },
-  { nspectId: "NSPECT-2PGM-AE57", nspectLink: "https://nspect.nvidia.com/registration/programs/15256/versions", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
-  { nspectId: "NSPECT-B372-3HK0", nspectLink: "https://nspect.nvidia.com/registration/programs/12729/versions", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
-  { nspectId: "NSPECT-JSIR-HO21", nspectLink: "https://nspect.nvidia.com/registration/programs/16642", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", platforms: "", notes: "" },
-  { nspectId: "NSPECT-RYHK-7TPB", nspectLink: "https://nspect.nvidia.com/registration/programs/15237/versions", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
-  { nspectId: "NSPECT-YN8F-3UY0", nspectLink: "https://nspect.nvidia.com/registration/programs/17879/versions", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-0IP1-TKSQ", nspectLink: "https://nspect.nvidia.com/registration/programs/20547", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
-  { nspectId: "NSPECT-1RHM-CABY", nspectLink: "https://nspect.nvidia.com/registration/programs/16076/versions", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-G2B8-GZ2M", nspectLink: "https://nspect.nvidia.com/registration/programs/8376", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "NSPECT-EJQD-OLPS", nspectLink: "https://nspect.nvidia.com/registration/programs/20472/versions", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
-  { nspectId: "NSPECT-Y7PS-6K4L", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "" },
-  { nspectId: "", nspectLink: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "" },
-  { nspectId: "", nspectLink: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "Pending nSpect registration" },
+  { nspectId: "NSPECT-SRJE-WI5W", nspectLink: "https://nspect.nvidia.com/registration/programs/3395/versions", productName: "DDCS (Derived Data Cache)", parentKey: "", securityEngineer: "", osrbTicket: "3840915", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/962", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-A23X-PJ7A", nspectLink: "https://nspect.nvidia.com/registration/programs/2497/versions", productName: "Hub", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonDGXC, Kit", notes: "", locked: false },
+  { nspectId: "NSPECT-1P7O-W8EM", nspectLink: "https://nspect.nvidia.com/registration/programs/12879/versions", productName: "UCC (USD Content Cache)", parentKey: "", securityEngineer: "", osrbTicket: "5357552", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-PVEZ-MYOX", nspectLink: "https://nspect.nvidia.com/registration/programs/350/versions", productName: "Client Library", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "Kit, OV RTX", notes: "", locked: false },
+  { nspectId: "NSPECT-Z3RU-SUEX", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Z3RU-SUEX", productName: "Storage APIs - Agent Skills", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/943", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-XQPV-EDBQ", nspectLink: "https://nspect.nvidia.com/registration/programs/16176/versions", productName: "Simple NGINX (Discovery Service)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5634762", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/934", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-5TC5-EP0X", nspectLink: "https://nspect.nvidia.com/registration/programs/17074/versions", productName: "Storage API Discovery Service (helm)", parentKey: "", securityEngineer: "", osrbTicket: "5610168", exportCompliance: "5729334", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-XV4E-WJW4", nspectLink: "https://nspect.nvidia.com/registration/programs/12710/versions", productName: "USD Storage APIs Envoy Auth Extension", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/935", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-KETX-8HHI", nspectLink: "https://nspect.nvidia.com/registration/programs/16960/versions", productName: "Storage API Validation Tests", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/937", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-E5HZ-J3CI", nspectLink: "https://nspect.nvidia.com/registration/programs/12733/versions", productName: "Storage APIs - Navigator", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/936", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-36VS-TCJ8", nspectLink: "https://nspect.nvidia.com/registration/programs/15336/versions", productName: "USD Storage APIs Notification Service", parentKey: "", securityEngineer: "", osrbTicket: "5586001", exportCompliance: "5552542", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/933", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-GIH7-9JFJ", nspectLink: "https://nspect.nvidia.com/registration/programs/16643", productName: "Storage APIs - Notifications API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/939", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-2PGM-AE57", nspectLink: "https://nspect.nvidia.com/registration/programs/15256/versions", productName: "USD Storage Permission Panel UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-B372-3HK0", nspectLink: "https://nspect.nvidia.com/registration/programs/12729/versions", productName: "USD Storage APIs Permission Service", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-JSIR-HO21", nspectLink: "https://nspect.nvidia.com/registration/programs/16642", productName: "Storage APIs - Permissions API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/940", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-RYHK-7TPB", nspectLink: "https://nspect.nvidia.com/registration/programs/15237/versions", productName: "USD Storage APIs Permission UI", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-YN8F-3UY0", nspectLink: "https://nspect.nvidia.com/registration/programs/17879/versions", productName: "Storage APIs - Smoke Test", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-0IP1-TKSQ", nspectLink: "https://nspect.nvidia.com/registration/programs/20547", productName: "OneDrive Storage Adapter", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-1RHM-CABY", nspectLink: "https://nspect.nvidia.com/registration/programs/16076/versions", productName: "USD Storage APIs Storage Service", parentKey: "", securityEngineer: "", osrbTicket: "5621446", exportCompliance: "5589221", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/932", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-G2B8-GZ2M", nspectLink: "https://nspect.nvidia.com/registration/programs/8376", productName: "Storage APIs - Storage Service API (proto)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "https://nspect.nvidia.com/actions/compliance/legal/software/938", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "NSPECT-EJQD-OLPS", nspectLink: "https://nspect.nvidia.com/registration/programs/20472/versions", productName: "OV.Libraries - ovstorage", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
+  { nspectId: "NSPECT-Y7PS-6K4L", nspectLink: "https://nspect.nvidia.com/registration/programs?id=NSPECT-Y7PS-6K4L", productName: "WRAPP", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "", locked: false },
+  { nspectId: "", nspectLink: "", productName: "OKAS (Kit App Streaming)", parentKey: "", securityEngineer: "", osrbTicket: "multiple (4860797-4860816)", exportCompliance: "5717426", legalLink: "", platforms: "OVonSM, OVonDGXC", notes: "", locked: false },
+  { nspectId: "", nspectLink: "", productName: "Live Edit (pending)", parentKey: "", securityEngineer: "", osrbTicket: "", exportCompliance: "", legalLink: "", platforms: "", notes: "Pending nSpect registration", locked: false },
 ]
+
+const STORAGE_KEY = 'mission-control-nspect-v4'
 
 export default function NSpectPage() {
   const [entries, setEntries] = useState<NSpectEntry[]>([])
@@ -108,25 +109,58 @@ export default function NSpectPage() {
   const [showLookup, setShowLookup] = useState(false)
   const [showManualAdd, setShowManualAdd] = useState(false)
   const [manualEntry, setManualEntry] = useState({ nspectId: '', productName: '' })
+  const [undoStack, setUndoStack] = useState<NSpectEntry[][]>([])
+  const [saveFlash, setSaveFlash] = useState(false)
 
   // Load from localStorage, seed if empty
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('mission-control-nspect-v3')
+      const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        setEntries(JSON.parse(stored))
+        const parsed = JSON.parse(stored)
+        // Migrate: add locked field if missing
+        setEntries(parsed.map((e: any) => ({ ...e, locked: e.locked ?? false })))
       } else {
-        // First load: seed with data from OneNote export
         const seeded = SEED_DATA.map(s => ({ ...s, id: crypto.randomUUID() }))
         setEntries(seeded)
-        localStorage.setItem('mission-control-nspect-v3', JSON.stringify(seeded))
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
       }
     } catch {}
   }, [])
 
-  const save = (updated: NSpectEntry[]) => {
+  const save = (updated: NSpectEntry[], pushUndo = true) => {
+    if (pushUndo && entries.length > 0) {
+      setUndoStack(prev => [...prev.slice(-19), entries]) // keep last 20 states
+    }
     setEntries(updated)
-    localStorage.setItem('mission-control-nspect-v3', JSON.stringify(updated))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    // Flash save indicator
+    setSaveFlash(true)
+    setTimeout(() => setSaveFlash(false), 1500)
+  }
+
+  const undo = () => {
+    if (undoStack.length === 0) return
+    const prev = undoStack[undoStack.length - 1]
+    setUndoStack(s => s.slice(0, -1))
+    setEntries(prev)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prev))
+  }
+
+  const cloneEntry = (entry: NSpectEntry) => {
+    const clone: NSpectEntry = {
+      ...entry,
+      id: crypto.randomUUID(),
+      notes: entry.notes ? `(cloned) ${entry.notes}` : '(cloned)',
+    }
+    const idx = entries.findIndex(e => e.id === entry.id)
+    const updated = [...entries]
+    updated.splice(idx + 1, 0, clone)
+    save(updated)
+  }
+
+  const toggleLock = (id: string) => {
+    save(entries.map(e => e.id === id ? { ...e, locked: !e.locked } : e))
   }
 
   const lookupNSpect = async () => {
@@ -148,18 +182,38 @@ export default function NSpectPage() {
         return
       }
 
-      // Check if already exists — update it if so
       const existing = entries.find(e => e.nspectId.toLowerCase() === id.toLowerCase())
       if (existing) {
-        const updates: Partial<NSpectEntry> = {
-          parentKey: data.parent.key,
-          securityEngineer: data.parent.assignee || existing.securityEngineer,
+        if (existing.locked) {
+          // Clone instead of edit
+          const clone: NSpectEntry = {
+            ...existing,
+            id: crypto.randomUUID(),
+            parentKey: data.parent.key,
+            securityEngineer: data.parent.assignee || existing.securityEngineer,
+            osrbTicket: data.osrb?.link?.match(/\d+$/)?.[0] || existing.osrbTicket,
+            exportCompliance: data.exportCompliance?.link?.match(/\d+$/)?.[0] || existing.exportCompliance,
+            legalLink: data.legal?.link || existing.legalLink,
+            notes: `Updated ${new Date().toISOString().slice(0, 10)}`,
+            locked: false,
+          }
+          const idx = entries.findIndex(e => e.id === existing.id)
+          const updated = [...entries]
+          updated.splice(idx + 1, 0, clone)
+          save(updated)
+          setLookupSuccess(`Cloned "${existing.productName}" (locked row) — new version added below`)
+        } else {
+          // Update in place
+          const updates: Partial<NSpectEntry> = {
+            parentKey: data.parent.key,
+            securityEngineer: data.parent.assignee || existing.securityEngineer,
+          }
+          if (data.osrb) updates.osrbTicket = data.osrb.link?.match(/\d+$/)?.[0] || existing.osrbTicket
+          if (data.exportCompliance) updates.exportCompliance = data.exportCompliance.link?.match(/\d+$/)?.[0] || existing.exportCompliance
+          if (data.legal) updates.legalLink = data.legal.link || existing.legalLink
+          save(entries.map(e => e.id === existing.id ? { ...e, ...updates } : e))
+          setLookupSuccess(`Updated "${existing.productName}" from ${data.parent.key}`)
         }
-        if (data.osrb) updates.osrbTicket = data.osrb.link?.match(/\d+$/)?.[0] || existing.osrbTicket
-        if (data.exportCompliance) updates.exportCompliance = data.exportCompliance.link?.match(/\d+$/)?.[0] || existing.exportCompliance
-        if (data.legal) updates.legalLink = data.legal.link || existing.legalLink
-        save(entries.map(e => e.id === existing.id ? { ...e, ...updates } : e))
-        setLookupSuccess(`Updated "${existing.productName}" from ${data.parent.key}`)
       } else {
         const entry: NSpectEntry = {
           id: crypto.randomUUID(),
@@ -173,6 +227,7 @@ export default function NSpectPage() {
           legalLink: data.legal?.link || '',
           platforms: '',
           notes: '',
+          locked: false,
         }
         save([entry, ...entries])
         setLookupSuccess(`Added "${entry.productName}" from ${data.parent.key}`)
@@ -198,6 +253,7 @@ export default function NSpectPage() {
       legalLink: '',
       platforms: '',
       notes: '',
+      locked: false,
     }
     save([entry, ...entries])
     setManualEntry({ nspectId: '', productName: '' })
@@ -236,7 +292,22 @@ export default function NSpectPage() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">PLC compliance — {entries.length} registrations tracked</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {/* Save indicator */}
+          {saveFlash && (
+            <span className="text-xs text-green-600 flex items-center gap-1 animate-pulse">
+              <CheckCircle className="w-3 h-3" /> Saved
+            </span>
+          )}
+          {/* Undo button */}
+          <button
+            onClick={undo}
+            disabled={undoStack.length === 0}
+            title="Undo last change"
+            className="px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition flex items-center gap-1"
+          >
+            <Undo2 className="w-4 h-4" /> Undo
+          </button>
           <button onClick={() => { setShowLookup(!showLookup); setShowManualAdd(false) }} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] transition flex items-center gap-2">
             <Download className="w-4 h-4" /> Import from Jira
           </button>
@@ -250,7 +321,7 @@ export default function NSpectPage() {
       {showLookup && (
         <div className="mb-4 p-4 bg-[#76B900]/5 rounded-xl border border-[#76B900]/20">
           <p className="text-sm text-gray-700 mb-2 font-medium">Look up by nSpect ID</p>
-          <p className="text-xs text-gray-500 mb-3">Enter an nSpect ID. If it already exists in the table, it will update the row with latest Jira data. Otherwise it creates a new entry.</p>
+          <p className="text-xs text-gray-500 mb-3">Enter an nSpect ID. If the row is 🔒 locked, it will clone instead of overwriting. Otherwise it updates in place.</p>
           <div className="flex items-center gap-2">
             <input
               type="text"
@@ -304,7 +375,19 @@ export default function NSpectPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-left">
+          <table className="w-full text-left table-fixed">
+            <colgroup>
+              <col className="w-[160px]" />
+              <col className="w-[200px]" />
+              <col className="w-[110px]" />
+              <col className="w-[130px]" />
+              <col className="w-[100px]" />
+              <col className="w-[100px]" />
+              <col className="w-[100px]" />
+              <col className="w-[120px]" />
+              <col className="w-[150px]" />
+              <col className="w-[80px]" />
+            </colgroup>
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">nSpect ID</th>
@@ -312,64 +395,74 @@ export default function NSpectPage() {
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">PLC Parent</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Security Eng</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">OSRB</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Export Compliance</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Export</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Legal</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Platforms</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notes</th>
-                <th className="w-10 px-2 py-3"></th>
+                <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map(entry => (
-                <tr key={entry.id} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                  <td className="px-3 py-3">
+                <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${entry.locked ? 'bg-amber-50/50' : ''}`}>
+                  <td className="px-3 py-3 align-top">
                     <NSpectIdLink nspectId={entry.nspectId} nspectLink={entry.nspectLink} />
                   </td>
-                  <td className="px-3 py-3">
-                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none min-w-[160px]" placeholder="—" />
+                  <td className="px-3 py-3 align-top">
+                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none break-words" placeholder="—" style={{ wordBreak: 'break-word' }} />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-3 align-top">
                     {entry.parentKey ? (
-                      <a href={`https://jirasw.nvidia.com/browse/${entry.parentKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs flex items-center gap-1">
+                      <a href={`https://jirasw.nvidia.com/browse/${entry.parentKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] hover:underline text-xs inline-flex items-center gap-1">
                         {entry.parentKey}
                         <ExternalLink className="w-3 h-3 flex-shrink-0" />
                       </a>
                     ) : (
-                      <span className="text-gray-300 text-xs">—</span>
+                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'parentKey', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="OMPE-..." />
                     )}
                   </td>
-                  <td className="px-3 py-3">
-                    <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, 'securityEngineer', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[90px]" placeholder="—" />
+                  <td className="px-3 py-3 align-top">
+                    <input type="text" value={entry.securityEngineer} onChange={e => updateEntry(entry.id, 'securityEngineer', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none break-words" placeholder="—" />
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-3 align-top">
                     {entry.osrbTicket ? (
                       <NvbugsLink ticketId={entry.osrbTicket} />
                     ) : (
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'osrbTicket', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
                     )}
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-3 align-top">
                     {entry.exportCompliance ? (
                       <NvbugsLink ticketId={entry.exportCompliance} />
                     ) : (
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'exportCompliance', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
                     )}
                   </td>
-                  <td className="px-3 py-3">
+                  <td className="px-3 py-3 align-top">
                     {entry.legalLink ? (
                       <LinkDisplay url={entry.legalLink} />
                     ) : (
                       <input type="text" value="" onChange={e => updateEntry(entry.id, 'legalLink', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="—" />
                     )}
                   </td>
-                  <td className="px-3 py-3">
-                    <input type="text" value={entry.platforms} onChange={e => updateEntry(entry.id, 'platforms', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[80px]" placeholder="—" />
+                  <td className="px-3 py-3 align-top">
+                    <input type="text" value={entry.platforms} onChange={e => updateEntry(entry.id, 'platforms', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none break-words" placeholder="—" />
                   </td>
-                  <td className="px-3 py-3">
-                    <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, 'notes', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none min-w-[80px]" placeholder="—" />
+                  <td className="px-3 py-3 align-top">
+                    <input type="text" value={entry.notes} onChange={e => updateEntry(entry.id, 'notes', e.target.value)} className="w-full bg-transparent text-xs text-gray-600 border-0 p-0 focus:outline-none break-words" placeholder="—" />
                   </td>
-                  <td className="px-2 py-3">
-                    <button onClick={() => deleteEntry(entry.id)} title="Delete" className="text-gray-300 hover:text-red-400 transition"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <td className="px-2 py-3 align-top">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => toggleLock(entry.id)} title={entry.locked ? 'Unlock (edits will overwrite)' : 'Lock (updates will clone)'} className={`transition ${entry.locked ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-gray-500'}`}>
+                        {entry.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+                      </button>
+                      <button onClick={() => cloneEntry(entry)} title="Clone row" className="text-gray-300 hover:text-blue-500 transition">
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => deleteEntry(entry.id)} title="Delete" className="text-gray-300 hover:text-red-400 transition">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -378,9 +471,12 @@ export default function NSpectPage() {
         </div>
       )}
 
-      <div className="mt-3 text-xs text-gray-400">
-        {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}
-        {entries.length > 0 && <span className="ml-3">• Data stored locally in browser • Use "Import from Jira" to refresh PLC data</span>}
+      <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
+        <span>
+          {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}
+          {entries.filter(e => e.locked).length > 0 && <span className="ml-2">• {entries.filter(e => e.locked).length} locked</span>}
+        </span>
+        <span>Auto-saves to browser • {undoStack.length} undo step{undoStack.length !== 1 ? 's' : ''} available</span>
       </div>
     </div>
   )
