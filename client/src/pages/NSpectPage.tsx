@@ -175,37 +175,132 @@ export default function NSpectPage() {
 
   const [bulkLoading, setBulkLoading] = useState(false)
   const [bulkProgress, setBulkProgress] = useState('')
+  const [refreshingId, setRefreshingId] = useState<string | null>(null)
+
+  // Refresh a single row by its nSpect ID or parentKey
+  const refreshSingle = async (entry: NSpectEntry) => {
+    if (entry.locked) return
+    setRefreshingId(entry.id)
+    const today = todayStr()
+    let refreshed = false
+
+    // Try nSpect lookup first
+    if (entry.nspectId && entry.nspectId.startsWith('NSPECT-')) {
+      try {
+        const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          if (data.found) {
+            const fixVersionStr = (data.parent.fixVersions || []).join(', ')
+            save(entries.map(e => {
+              if (e.id !== entry.id) return e
+              return {
+                ...e,
+                parentKey: data.parent.key || e.parentKey,
+                securityEngineer: data.parent.assignee || e.securityEngineer,
+                fixVersion: fixVersionStr || e.fixVersion,
+                osrbTicket: (data.osrb?.link?.match(/\d+$/)?.[0]) || e.osrbTicket,
+                exportCompliance: (data.exportCompliance?.link?.match(/\d+$/)?.[0]) || e.exportCompliance,
+                legalLink: data.legal?.link || e.legalLink,
+                lastUpdated: today,
+              }
+            }))
+            refreshed = true
+          }
+        }
+      } catch {}
+    }
+
+    // Fallback: use parentKey directly
+    if (!refreshed && entry.parentKey?.match(/^[A-Z]+-\d+$/)) {
+      try {
+        const res = await fetch(`/api/jira/issue/${entry.parentKey}/plc-data`, { credentials: 'include' })
+        if (res.ok) {
+          const data = await res.json()
+          save(entries.map(e => {
+            if (e.id !== entry.id) return e
+            return {
+              ...e,
+              securityEngineer: data.assignee || e.securityEngineer,
+              fixVersion: data.fixVersions?.join(', ') || e.fixVersion,
+              osrbTicket: data.osrb || e.osrbTicket,
+              exportCompliance: data.exportCompliance || e.exportCompliance,
+              legalLink: data.legal || e.legalLink,
+              lastUpdated: today,
+            }
+          }))
+          refreshed = true
+        }
+      } catch {}
+    }
+
+    setRefreshingId(null)
+  }
 
   const refreshAllFromJira = async () => {
-    const toRefresh = entries.filter(e => e.nspectId && e.nspectId.startsWith('NSPECT-'))
+    const toRefresh = entries.filter(e => !e.locked && (e.nspectId?.startsWith('NSPECT-') || e.parentKey?.match(/^[A-Z]+-\d+$/)))
     if (toRefresh.length === 0) return
     setBulkLoading(true)
     let updated = [...entries]
     let count = 0
     for (const entry of toRefresh) {
-      setBulkProgress(`${++count}/${toRefresh.length}: ${entry.nspectId}`)
-      try {
-        const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
-        if (!res.ok) continue
-        const data = await res.json()
-        if (!data.found) continue
-        const fixVersionStr = (data.parent.fixVersions || []).join(', ')
-        const today = todayStr()
-        updated = updated.map(e => {
-          if (e.id !== entry.id) return e
-          if (e.locked) return e // don't touch locked rows
-          return {
-            ...e,
-            parentKey: data.parent.key || e.parentKey,
-            securityEngineer: data.parent.assignee || e.securityEngineer,
-            fixVersion: fixVersionStr || e.fixVersion,
-            osrbTicket: (data.osrb?.link?.match(/\d+$/)?.[0]) || e.osrbTicket,
-            exportCompliance: (data.exportCompliance?.link?.match(/\d+$/)?.[0]) || e.exportCompliance,
-            legalLink: data.legal?.link || e.legalLink,
-            lastUpdated: today,
+      setBulkProgress(`${++count}/${toRefresh.length}: ${entry.nspectId || entry.parentKey}`)
+      const today = todayStr()
+      let refreshed = false
+
+      // Try nSpect ID lookup first
+      if (entry.nspectId && entry.nspectId.startsWith('NSPECT-')) {
+        try {
+          const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
+          if (res.ok) {
+            const data = await res.json()
+            if (data.found) {
+              const fixVersionStr = (data.parent.fixVersions || []).join(', ')
+              updated = updated.map(e => {
+                if (e.id !== entry.id) return e
+                return {
+                  ...e,
+                  parentKey: data.parent.key || e.parentKey,
+                  securityEngineer: data.parent.assignee || e.securityEngineer,
+                  fixVersion: fixVersionStr || e.fixVersion,
+                  osrbTicket: (data.osrb?.link?.match(/\d+$/)?.[0]) || e.osrbTicket,
+                  exportCompliance: (data.exportCompliance?.link?.match(/\d+$/)?.[0]) || e.exportCompliance,
+                  legalLink: data.legal?.link || e.legalLink,
+                  lastUpdated: today,
+                }
+              })
+              refreshed = true
+            }
           }
-        })
-      } catch {}
+        } catch {}
+      }
+
+      // Fallback: if nSpect lookup didn't work but we have a parentKey, use plc-data endpoint
+      if (!refreshed) {
+        const parentKey = updated.find(e => e.id === entry.id)?.parentKey || entry.parentKey
+        if (parentKey?.match(/^[A-Z]+-\d+$/)) {
+          try {
+            const res = await fetch(`/api/jira/issue/${parentKey}/plc-data`, { credentials: 'include' })
+            if (res.ok) {
+              const data = await res.json()
+              updated = updated.map(e => {
+                if (e.id !== entry.id) return e
+                return {
+                  ...e,
+                  parentKey,
+                  securityEngineer: data.assignee || e.securityEngineer,
+                  fixVersion: data.fixVersions?.join(', ') || e.fixVersion,
+                  osrbTicket: data.osrb || e.osrbTicket,
+                  exportCompliance: data.exportCompliance || e.exportCompliance,
+                  legalLink: data.legal || e.legalLink,
+                  lastUpdated: today,
+                }
+              })
+            }
+          } catch {}
+        }
+      }
+
       // Small delay to avoid hammering the API
       await new Promise(r => setTimeout(r, 500))
     }
@@ -536,6 +631,14 @@ export default function NSpectPage() {
                   </td>
                   <td className="px-2 py-3 align-top">
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => refreshSingle(entry)}
+                        disabled={entry.locked || refreshingId === entry.id || (!entry.nspectId?.startsWith('NSPECT-') && !entry.parentKey?.match(/^[A-Z]+-\d+$/))}
+                        title="Refresh from Jira"
+                        className="text-gray-300 hover:text-blue-500 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${refreshingId === entry.id ? 'animate-spin text-blue-500' : ''}`} />
+                      </button>
                       <button onClick={() => toggleLock(entry.id)} title={entry.locked ? 'Unlock (edits will overwrite)' : 'Lock (updates will clone)'} className={`transition ${entry.locked ? 'text-amber-500 hover:text-amber-600' : 'text-gray-300 hover:text-gray-500'}`}>
                         {entry.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
                       </button>
