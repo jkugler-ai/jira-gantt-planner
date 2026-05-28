@@ -299,6 +299,30 @@ export default function NSpectPage() {
     setLookupLoading(false)
   }
 
+  // Fetch data from a specific PLC Parent ticket key
+  const fetchByParentKey = async (entryId: string, parentKey: string) => {
+    if (!parentKey.match(/^[A-Z]+-\d+$/)) return
+    try {
+      const res = await fetch(`/api/jira/issue/${parentKey}/plc-data`, { credentials: 'include' })
+      if (!res.ok) return
+      const data = await res.json()
+      const today = todayStr()
+      save(entries.map(e => {
+        if (e.id !== entryId) return e
+        return {
+          ...e,
+          parentKey,
+          securityEngineer: data.assignee || e.securityEngineer,
+          fixVersion: data.fixVersions?.join(', ') || e.fixVersion,
+          osrbTicket: data.osrb || e.osrbTicket,
+          exportCompliance: data.exportCompliance || e.exportCompliance,
+          legalLink: data.legal || e.legalLink,
+          lastUpdated: today,
+        }
+      }))
+    } catch {}
+  }
+
   const addManual = () => {
     if (!manualEntry.nspectId.trim() && !manualEntry.productName.trim()) return
     const entry: NSpectEntry = {
@@ -471,7 +495,7 @@ export default function NSpectPage() {
                         <ExternalLink className="w-3 h-3 flex-shrink-0" />
                       </a>
                     ) : (
-                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'parentKey', e.target.value)} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="OMPE-..." />
+                      <input type="text" value="" onChange={e => updateEntry(entry.id, 'parentKey', e.target.value)} onBlur={e => { if (e.target.value.match(/^[A-Z]+-\d+$/)) fetchByParentKey(entry.id, e.target.value) }} className="w-full bg-transparent text-xs text-gray-400 border-0 p-0 focus:outline-none" placeholder="OMPE-... (fetches on tab out)" />
                     )}
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>

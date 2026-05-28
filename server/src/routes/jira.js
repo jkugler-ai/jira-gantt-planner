@@ -597,4 +597,61 @@ router.get('/nspect/lookup', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/jira/issue/:key/plc-data - Fetch PLC parent ticket data by key directly
+router.get('/issue/:key/plc-data', requireAuth, async (req, res) => {
+  try {
+    const { key } = req.params;
+    // Fetch the parent ticket
+    const parentRes = await jiraRequest(req, 'GET',
+      `/issue/${key}?fields=summary,status,assignee,subtasks,issuelinks,fixVersions`
+    );
+    const pf = parentRes.data.fields;
+    const result = {
+      key: parentRes.data.key,
+      summary: pf.summary,
+      assignee: pf.assignee?.displayName || '',
+      fixVersions: (pf.fixVersions || []).map(fv => fv.name),
+      osrb: '',
+      exportCompliance: '',
+      legal: '',
+    };
+
+    // Get children: subtasks + blocked-by links
+    const subtasks = pf.subtasks || [];
+    const links = pf.issuelinks || [];
+    const blockerKeys = links
+      .filter(l => l.type.name === 'Blocks' && l.inwardIssue)
+      .map(l => l.inwardIssue.key);
+    const childKeys = [...subtasks.map(s => s.key), ...blockerKeys];
+
+    for (const childKey of childKeys) {
+      try {
+        const childRes = await jiraRequest(req, 'GET',
+          `/issue/${childKey}?fields=summary,description,comment`
+        );
+        const cf = childRes.data.fields;
+        const s = cf.summary.toLowerCase();
+        const allText = (cf.description || '') + ' ' +
+          (cf.comment?.comments || []).map(c => c.body || '').join(' ');
+
+        const nvbugsMatch = allText.match(/https?:\/\/nvbugs(?:pro)?\.nvidia\.com\/bug\/(\d+)/);
+        const nspectMatch = allText.match(/https?:\/\/nspect\.nvidia\.com\/[^\s|\])}'"<>]+/);
+
+        if (s.includes('oss license') || s.includes('osrb') || s.includes('oss vuln')) {
+          result.osrb = nvbugsMatch ? nvbugsMatch[1] : '';
+        } else if (s.includes('export compliance') || s.includes('eccn') || s.includes('export')) {
+          result.exportCompliance = nvbugsMatch ? nvbugsMatch[1] : '';
+        } else if (s.includes('legal') && (s.includes('product') || s.includes('terms') || s.includes('user acceptance'))) {
+          result.legal = nspectMatch ? nspectMatch[0] : '';
+        }
+      } catch {}
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('PLC data fetch error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to fetch PLC data' });
+  }
+});
+
 module.exports = router;
