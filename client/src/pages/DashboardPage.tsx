@@ -385,27 +385,40 @@ export default function DashboardPage() {
           {upcomingDue.length === 0 ? (
             <p className="text-sm text-gray-400">No upcoming due dates</p>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {upcomingDue
-                .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-                .slice(0, 15)
-                .map(item => (
-                  <div key={item.key} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <a
-                        href={`https://jirasw.nvidia.com/browse/${item.key}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#76B900] font-medium hover:underline flex-shrink-0"
-                      >
-                        {item.key}
-                      </a>
-                      {item.type && <span className="text-xs text-gray-400 flex-shrink-0">{item.type}</span>}
-                      <span className="text-gray-700 truncate">{item.summary}</span>
-                    </div>
-                    <span className="text-xs text-purple-600 font-medium flex-shrink-0 ml-2">{item.dueDate}</span>
-                  </div>
-                ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Key</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Type</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Summary</th>
+                    <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Assignee</th>
+                    <th className="text-right text-xs font-medium text-purple-600 uppercase py-1.5">Due</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {upcomingDue
+                    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                    .map(item => (
+                      <tr key={item.key} className="border-b border-gray-100 last:border-0">
+                        <td className="py-1.5 pr-3">
+                          <a
+                            href={`https://jirasw.nvidia.com/browse/${item.key}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#76B900] font-medium hover:underline whitespace-nowrap"
+                          >
+                            {item.key}
+                          </a>
+                        </td>
+                        <td className="py-1.5 pr-3 text-xs text-gray-400 whitespace-nowrap">{item.type || '\u2014'}</td>
+                        <td className="py-1.5 pr-3 text-gray-700 truncate max-w-[300px]">{item.summary}</td>
+                        <td className="py-1.5 pr-3 text-gray-600 whitespace-nowrap">{item.assignee || '\u2014'}</td>
+                        <td className="py-1.5 text-right text-purple-600 font-medium whitespace-nowrap">{item.dueDate}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
