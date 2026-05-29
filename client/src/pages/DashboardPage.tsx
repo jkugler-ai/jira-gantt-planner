@@ -218,8 +218,8 @@ export default function DashboardPage() {
             <Bug className="w-4 h-4" />
             BUGS
           </div>
-          <div className="text-2xl font-bold text-gray-900">{bugs.length}</div>
-          <div className="text-xs text-gray-500 mt-1">{bugs.filter(b => b.statusCategory !== 'done').length} open</div>
+          <div className="text-2xl font-bold text-gray-900">{bugs.filter(b => b.statusCategory !== 'done').length}</div>
+          <div className="text-xs text-gray-500 mt-1">open of {bugs.length} total</div>
         </div>
       </div>
 
@@ -230,7 +230,7 @@ export default function DashboardPage() {
             <AlertTriangle className="w-4 h-4 text-red-500" />
             Past Due ({overdue.length})
           </h2>
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2">
             {overdue
               .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
               .map(item => {
@@ -289,6 +289,65 @@ export default function DashboardPage() {
                     </div>
                   ))}
                   {dayItems.length === 0 && (
+                    <div className="text-[10px] text-gray-300">—</div>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Next Week */}
+        <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide mt-5 mb-3 flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-purple-500" />
+          Next Week
+        </h2>
+        <div className="grid grid-cols-5 gap-2">
+          {Array.from({ length: 5 }, (_, i) => {
+            const d = new Date(startOfWeek)
+            d.setDate(d.getDate() + 7 + i)
+            return d
+          }).map(day => {
+            const dayStr = day.toISOString().slice(0, 10)
+            const dayItems = weekItems.filter(i => i.dueDate === dayStr)
+            // Also check all loaded items for next week due dates
+            const nextWeekJiraItems = allLoaded.filter(i => i.dueDate === dayStr && i.statusCategory !== 'done')
+            const nextWeekFollowUps = followUps.filter((fu: any) => fu.dueDate === dayStr)
+            const combined = [
+              ...nextWeekJiraItems.map(i => ({ key: i.key, summary: i.summary, source: 'jira' as const })),
+              ...nextWeekFollowUps.map((fu: any) => ({ key: fu.id, summary: fu.title, source: 'followup' as const }))
+            ]
+            // Deduplicate
+            const seen = new Set<string>()
+            const deduped = combined.filter(item => {
+              if (seen.has(item.key)) return false
+              seen.add(item.key)
+              return true
+            })
+            return (
+              <div key={dayStr} className="rounded-lg border border-gray-200 p-3">
+                <div className="text-xs font-bold mb-2 text-gray-500">
+                  {day.toLocaleDateString('en-US', { weekday: 'short' })} {day.getDate()}
+                </div>
+                <div className="space-y-1">
+                  {deduped.map(item => (
+                    <div key={item.key} className="text-[11px]">
+                      {item.source === 'jira' ? (
+                        <a
+                          href={`https://jirasw.nvidia.com/browse/${item.key}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#76B900] hover:underline"
+                          title={item.summary}
+                        >
+                          {item.key}
+                        </a>
+                      ) : (
+                        <span className="text-purple-600" title={item.summary}>• {item.summary.slice(0, 30)}</span>
+                      )}
+                    </div>
+                  ))}
+                  {deduped.length === 0 && (
                     <div className="text-[10px] text-gray-300">—</div>
                   )}
                 </div>

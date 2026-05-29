@@ -7,6 +7,7 @@ export default function StoriesPage() {
       title="User Stories"
       subtitle="User stories from OMPE"
       defaultJql='project = OMPE AND issuetype = Story AND status != Done ORDER BY cf[13210] ASC, priority ASC'
+      extraColumns={['statusUpdate']}
     />
   )
 }

@@ -7,6 +7,7 @@ export default function SprintGoalsPage() {
       title="Sprint Goals"
       subtitle="High-level sprint objectives and progress"
       defaultJql='project = OMPE AND issuetype = "Sprint Goal" AND status != Done ORDER BY cf[13210] ASC, priority ASC'
+      extraColumns={['statusUpdate']}
     />
   )
 }

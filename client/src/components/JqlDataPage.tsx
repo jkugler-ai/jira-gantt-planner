@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search, ChevronUp, ChevronDown } from 'lucide-react'
+import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search, ChevronUp, ChevronDown, Pencil, X, Check } from 'lucide-react'
 import MultiSelect from './MultiSelect'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
@@ -51,7 +51,7 @@ interface FilterOptions {
   statuses: string[]
 }
 
-type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion' | 'created' | 'reporter'
+type SortField = 'key' | 'type' | 'summary' | 'status' | 'assignee' | 'devTeam' | 'startDate' | 'dueDate' | 'priority' | 'fixVersion' | 'created' | 'reporter' | 'statusUpdate' | 'staleness'
 type SortDir = 'asc' | 'desc'
 
 const PRIORITY_ORDER = ['Highest', 'High', 'Medium', 'Low', 'Lowest']
@@ -77,10 +77,12 @@ function PriorityBadge({ priority }: { priority: string }) {
     Medium: 'text-yellow-600',
     Low: 'text-blue-500',
     Lowest: 'text-gray-400',
+    Unprioritized: 'text-red-600 font-bold',
   }
+  const isUnprioritized = !priority || priority === 'Unprioritized'
   return (
-    <span className={`text-xs font-medium ${colorMap[priority] || 'text-gray-500'}`}>
-      {priority || '—'}
+    <span className={`text-xs font-medium ${isUnprioritized ? 'text-red-600 font-bold' : (colorMap[priority] || 'text-gray-500')}`}>
+      {priority || 'Unprioritized'}
     </span>
   )
 }
@@ -88,15 +90,98 @@ function PriorityBadge({ priority }: { priority: string }) {
 function getNvbugsLink(issue: JiraIssue): React.ReactNode {
   const id = issue.nvbugsId
   if (!id) return <span className="text-gray-400">—</span>
+  // Extract just the numeric ID if it's a full URL
+  const numericId = String(id).replace(/^https?:\/\/nvbugs\.nvidia\.com\//, '').replace(/\D/g, '') || id
   return (
     <a
-      href={`https://nvbugs.nvidia.com/${id}`}
+      href={`https://nvbugs.nvidia.com/${numericId}`}
       target="_blank"
       rel="noopener noreferrer"
       className="text-[#76B900] hover:underline text-xs font-medium"
     >
-      {id}
+      {numericId}
     </a>
+  )
+}
+
+function getStalenessLevel(created: string | null): { label: string; color: string } {
+  if (!created) return { label: '—', color: 'text-gray-400' }
+  const days = Math.floor((Date.now() - new Date(created).getTime()) / (1000 * 60 * 60 * 24))
+  if (days < 14) return { label: 'Fresh', color: 'text-green-600' }
+  if (days < 30) return { label: 'Aging', color: 'text-yellow-600' }
+  if (days < 90) return { label: 'Stale', color: 'text-orange-600' }
+  return { label: 'Very Stale', color: 'text-red-600 font-bold' }
+}
+
+function EditableStatusUpdate({ issueKey, value, onSaved }: { issueKey: string; value: string | null; onSaved: (newVal: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value || '')
+  const [saving, setSaving] = useState(false)
+
+  function startEdit() {
+    setDraft(value || '')
+    setEditing(true)
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const oldValue = value || ''
+      // Save new status update
+      await axios.put(`/api/jira/issue/${issueKey}`, {
+        fields: { customfield_14311: draft }
+      })
+      // Archive previous value as comment (only if there was a previous value)
+      if (oldValue.trim()) {
+        await axios.post(`/api/jira/issue/${issueKey}/comment`, {
+          body: `Previous Status Update:\n${oldValue}`
+        })
+      }
+      onSaved(draft)
+      setEditing(false)
+    } catch (e) {
+      console.error('Failed to save status update:', e)
+      alert('Failed to save status update. Check console for details.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <div className="relative min-w-[200px]">
+        <textarea
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
+          className="w-full text-xs border border-[#76B900] rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-[#76B900] resize-y min-h-[60px]"
+          autoFocus
+        />
+        <div className="flex gap-1 mt-1">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="px-2 py-0.5 bg-[#76B900] text-white rounded text-[10px] font-medium hover:bg-[#5a8f00] disabled:opacity-50 flex items-center gap-0.5"
+          >
+            <Check className="w-3 h-3" />
+            {saving ? 'Saving...' : 'Save'}
+          </button>
+          <button
+            onClick={() => setEditing(false)}
+            className="px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-medium hover:bg-gray-200 flex items-center gap-0.5"
+          >
+            <X className="w-3 h-3" />
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="group flex items-start gap-1 cursor-pointer" onClick={startEdit}>
+      <span className="text-xs text-gray-700 whitespace-pre-wrap max-w-[200px] truncate">{value || '—'}</span>
+      <Pencil className="w-3 h-3 text-gray-300 group-hover:text-[#76B900] flex-shrink-0 mt-0.5" />
+    </div>
   )
 }
 
@@ -152,6 +237,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   const showCreated = extraColumns.includes('created')
   const showNvbugs = extraColumns.includes('nvbugs')
   const showReporter = extraColumns.includes('reporter')
+  const showStatusUpdate = extraColumns.includes('statusUpdate')
+  const showStaleness = extraColumns.includes('staleness')
 
   // Initialize JQL from saved default or page default
   useEffect(() => {
@@ -308,13 +395,23 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           cmp = (a.reporter || '').localeCompare(b.reporter || '')
           break
         }
+        case 'statusUpdate': {
+          cmp = (a.statusUpdate || '').localeCompare(b.statusUpdate || '')
+          break
+        }
+        case 'staleness': {
+          const da = a.created ? new Date(a.created).getTime() : 0
+          const db = b.created ? new Date(b.created).getTime() : 0
+          cmp = da - db
+          break
+        }
       }
       return sortDir === 'desc' ? -cmp : cmp
     })
     return sorted
   }, [filteredIssues, sortField, sortDir])
 
-  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0) + (showReporter ? 1 : 0)
+  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0) + (showReporter ? 1 : 0) + (showStatusUpdate ? 1 : 0) + (showStaleness ? 1 : 0)
 
   return (
     <div className="p-8">
@@ -510,6 +607,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                 {showNvbugs && (
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">NVBugs</th>
                 )}
+                {showStatusUpdate && (
+                  <SortHeader field="statusUpdate" label="Status Update" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
+                {showStaleness && (
+                  <SortHeader field="staleness" label="Staleness" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
                 <SortHeader field="startDate" label="Start" current={sortField} dir={sortDir} onClick={handleSort} />
                 <SortHeader field="dueDate" label="Due" current={sortField} dir={sortDir} onClick={handleSort} />
               </tr>
@@ -578,6 +681,25 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     {showNvbugs && (
                       <td className="px-4 py-3 text-sm">
                         {getNvbugsLink(issue)}
+                      </td>
+                    )}
+                    {showStatusUpdate && (
+                      <td className="px-4 py-3">
+                        <EditableStatusUpdate
+                          issueKey={issue.key}
+                          value={issue.statusUpdate}
+                          onSaved={(newVal) => {
+                            setIssues(prev => prev.map(i => i.key === issue.key ? { ...i, statusUpdate: newVal } : i))
+                          }}
+                        />
+                      </td>
+                    )}
+                    {showStaleness && (
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const staleness = getStalenessLevel(issue.created)
+                          return <span className={`text-xs font-medium ${staleness.color}`}>{staleness.label}</span>
+                        })()}
                       </td>
                     )}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>

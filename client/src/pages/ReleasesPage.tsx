@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Rocket, ChevronDown, ChevronRight, RefreshCw, Shield, FileText, TestTube, AlertTriangle } from 'lucide-react'
+import { Rocket, ChevronDown, ChevronRight, RefreshCw, Shield, FileText, TestTube, AlertTriangle, Table, Layers } from 'lucide-react'
 import { getDefaultQuery } from '../lib/savedQueries'
 import { useSavedQueries } from '../lib/savedQueries'
+import JqlDataPage from '../components/JqlDataPage'
 
 interface JiraIssue {
   key: string
@@ -47,6 +48,7 @@ export default function ReleasesPage() {
   const [expandedPLC, setExpandedPLC] = useState<Set<string>>(new Set())
   const [jql, setJql] = useState(() => getDefaultQuery('releases', DEFAULT_JQL))
   const { queries } = useSavedQueries('releases')
+  const [viewMode, setViewMode] = useState<'grouped' | 'table'>('grouped')
 
   const fetchReleases = useCallback(async () => {
     setLoading(true)
@@ -158,6 +160,34 @@ export default function ReleasesPage() {
         </h1>
         <p className="text-gray-500 text-sm mt-1">Release milestones with PLC pillars, QA, and documentation tracking</p>
       </div>
+
+      {/* View Toggle */}
+      <div className="mb-4 flex items-center gap-2">
+        <button
+          onClick={() => setViewMode('grouped')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${viewMode === 'grouped' ? 'bg-[#76B900] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          <Layers className="w-4 h-4" />
+          Grouped View
+        </button>
+        <button
+          onClick={() => setViewMode('table')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${viewMode === 'table' ? 'bg-[#76B900] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          <Table className="w-4 h-4" />
+          Table View
+        </button>
+      </div>
+
+      {viewMode === 'table' ? (
+        <JqlDataPage
+          pageId="releases-table"
+          title=""
+          defaultJql={DEFAULT_JQL}
+          extraColumns={['statusUpdate', 'fixVersion']}
+        />
+      ) : (
+      <>
 
       {/* JQL Bar */}
       <div className="mb-4 flex items-center gap-2">
@@ -341,6 +371,8 @@ export default function ReleasesPage() {
           </div>
         ))}
       </div>
+      </>
+      )}
     </div>
   )
 }
