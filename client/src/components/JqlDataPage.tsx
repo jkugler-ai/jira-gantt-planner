@@ -115,12 +115,25 @@ function getStalenessLevel(created: string | null): { label: string; color: stri
 
 function EditableStatusUpdate({ issueKey, value, onSaved }: { issueKey: string; value: string | null; onSaved: (newVal: string) => void }) {
   const [editing, setEditing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [draft, setDraft] = useState(value || '')
   const [saving, setSaving] = useState(false)
 
   function startEdit() {
     setDraft(value || '')
     setEditing(true)
+  }
+
+  // Clean up Jira wiki markup for display
+  function cleanMarkup(text: string): string {
+    if (!text) return ''
+    return text
+      .replace(/\{\*\}/g, '')  // Remove {*} bold markers
+      .replace(/\{\_\}/g, '')  // Remove {_} italic markers
+      .replace(/\{\+\}/g, '')  // Remove {+} underline markers
+      .replace(/\{~\}/g, '')   // Remove {~} strikethrough markers
+      .replace(/\\n/g, '\n')  // Convert literal \n to newlines
+      .trim()
   }
 
   async function handleSave() {
@@ -177,10 +190,34 @@ function EditableStatusUpdate({ issueKey, value, onSaved }: { issueKey: string; 
     )
   }
 
+  const cleaned = cleanMarkup(value || '')
+  const lines = cleaned.split('\n').filter(l => l.trim())
+  const firstLine = lines[0] || '—'
+  const hasMore = lines.length > 1
+
   return (
-    <div className="group flex items-start gap-1 cursor-pointer" onClick={startEdit}>
-      <span className="text-xs text-gray-700 whitespace-pre-wrap max-w-[200px] truncate">{value || '—'}</span>
-      <Pencil className="w-3 h-3 text-gray-300 group-hover:text-[#76B900] flex-shrink-0 mt-0.5" />
+    <div className="max-w-[250px]">
+      <div className="group flex items-start gap-1">
+        <div className="flex-1 min-w-0">
+          {expanded ? (
+            <span className="text-xs text-gray-700 whitespace-pre-wrap break-words">{cleaned}</span>
+          ) : (
+            <span className="text-xs text-gray-700 truncate block">{firstLine}</span>
+          )}
+        </div>
+        <Pencil
+          className="w-3 h-3 text-gray-300 group-hover:text-[#76B900] flex-shrink-0 mt-0.5 cursor-pointer"
+          onClick={startEdit}
+        />
+      </div>
+      {hasMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-[10px] text-[#76B900] hover:underline mt-0.5"
+        >
+          {expanded ? 'Show less' : `+${lines.length - 1} more`}
+        </button>
+      )}
     </div>
   )
 }
