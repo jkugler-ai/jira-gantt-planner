@@ -13,6 +13,7 @@ export interface FilteredIssue {
   priorityRank?: number | null
   dueDate: string | null
   startDate: string | null
+  updated?: string | null
   statusUpdate: string | null
   devTeam: string | null
   programManager: string | null

@@ -71,6 +71,7 @@ export default function DashboardPage() {
               startDate: issue.startDate || issue.fields?.customfield_10015,
               assignee: issue.assignee || issue.fields?.assignee?.displayName,
               priority: issue.priority || issue.fields?.priority?.name,
+              updated: issue.updated || null,
             }))
             setPageDataset(pageId, issues)
           }
@@ -225,31 +226,48 @@ export default function DashboardPage() {
 
       {/* Past Due Items */}
       {overdue.length > 0 && (
-        <div className="bg-red-50 rounded-xl border border-red-200 p-5 mb-6 max-w-2xl">
+        <div className="bg-red-50 rounded-xl border border-red-200 p-5 mb-6">
           <h2 className="text-sm font-bold text-red-700 uppercase tracking-wide mb-3 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-red-500" />
             Past Due ({overdue.length})
           </h2>
-          <div className="space-y-2">
-            {overdue
-              .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-              .map(item => {
-                const daysLate = Math.ceil((today.getTime() - new Date(item.dueDate!).getTime()) / (1000 * 60 * 60 * 24))
-                return (
-                  <div key={item.key} className="flex items-center gap-3 text-sm">
-                    <a
-                      href={`https://jirasw.nvidia.com/browse/${item.key}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[#76B900] font-medium hover:underline flex-shrink-0 w-28"
-                    >
-                      {item.key}
-                    </a>
-                    <span className="text-gray-700 truncate flex-1">{item.summary}</span>
-                    <span className="text-xs text-red-600 font-bold flex-shrink-0">{daysLate}d late</span>
-                  </div>
-                )
-              })}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-red-200">
+                  <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Key</th>
+                  <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Summary</th>
+                  <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Assignee</th>
+                  <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Last Updated</th>
+                  <th className="text-right text-xs font-medium text-red-600 uppercase py-1">Late</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overdue
+                  .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
+                  .map(item => {
+                    const daysLate = Math.ceil((today.getTime() - new Date(item.dueDate!).getTime()) / (1000 * 60 * 60 * 24))
+                    return (
+                      <tr key={item.key} className="border-b border-red-100 last:border-0">
+                        <td className="py-1.5 pr-3">
+                          <a
+                            href={`https://jirasw.nvidia.com/browse/${item.key}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[#76B900] font-medium hover:underline whitespace-nowrap"
+                          >
+                            {item.key}
+                          </a>
+                        </td>
+                        <td className="py-1.5 pr-3 text-gray-700 truncate max-w-[300px]">{item.summary}</td>
+                        <td className="py-1.5 pr-3 text-gray-600 whitespace-nowrap">{item.assignee || '\u2014'}</td>
+                        <td className="py-1.5 pr-3 text-gray-500 whitespace-nowrap">{(item as any).updated || '\u2014'}</td>
+                        <td className="py-1.5 text-right text-red-600 font-bold whitespace-nowrap">{daysLate}d</td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
