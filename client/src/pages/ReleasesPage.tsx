@@ -184,7 +184,7 @@ export default function ReleasesPage() {
           pageId="releases-table"
           title=""
           defaultJql={DEFAULT_JQL}
-          extraColumns={['statusUpdate', 'fixVersion']}
+          extraColumns={['statusUpdate', 'fixVersion', 'staleness']}
         />
       ) : (
       <>

@@ -31,6 +31,7 @@ interface JiraIssue {
   dueDate: string | null
   startDate: string | null
   created: string | null
+  updated: string | null
   statusUpdate: string | null
   devTeam: string | null
   programManager: string | null
@@ -104,13 +105,13 @@ function getNvbugsLink(issue: JiraIssue): React.ReactNode {
   )
 }
 
-function getStalenessLevel(created: string | null): { label: string; color: string } {
-  if (!created) return { label: '—', color: 'text-gray-400' }
-  const days = Math.floor((Date.now() - new Date(created).getTime()) / (1000 * 60 * 60 * 24))
-  if (days < 14) return { label: 'Fresh', color: 'text-green-600' }
-  if (days < 30) return { label: 'Aging', color: 'text-yellow-600' }
-  if (days < 90) return { label: 'Stale', color: 'text-orange-600' }
-  return { label: 'Very Stale', color: 'text-red-600 font-bold' }
+function getStalenessLevel(updated: string | null): { label: string; color: string; days: number } {
+  if (!updated) return { label: '—', color: 'text-gray-400', days: 0 }
+  const days = Math.floor((Date.now() - new Date(updated).getTime()) / (1000 * 60 * 60 * 24))
+  if (days < 7) return { label: 'Active', color: 'text-green-600', days }
+  if (days < 14) return { label: 'Cooling', color: 'text-yellow-600', days }
+  if (days < 30) return { label: 'Stale', color: 'text-orange-600', days }
+  return { label: 'Very Stale', color: 'text-red-600 font-bold', days }
 }
 
 function EditableStatusUpdate({ issueKey, value, onSaved }: { issueKey: string; value: string | null; onSaved: (newVal: string) => void }) {
@@ -437,8 +438,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           break
         }
         case 'staleness': {
-          const da = a.created ? new Date(a.created).getTime() : 0
-          const db = b.created ? new Date(b.created).getTime() : 0
+          const da = a.updated ? new Date(a.updated).getTime() : 0
+          const db = b.updated ? new Date(b.updated).getTime() : 0
           cmp = da - db
           break
         }
@@ -734,8 +735,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     {showStaleness && (
                       <td className="px-4 py-3">
                         {(() => {
-                          const staleness = getStalenessLevel(issue.created)
-                          return <span className={`text-xs font-medium ${staleness.color}`}>{staleness.label}</span>
+                          const staleness = getStalenessLevel(issue.updated)
+                          return (
+                            <span className={`text-xs font-medium ${staleness.color}`} title={`Last updated: ${issue.updated || 'unknown'}`}>
+                              {staleness.label}{staleness.days > 0 ? ` (${staleness.days}d)` : ''}
+                            </span>
+                          )
                         })()}
                       </td>
                     )}
