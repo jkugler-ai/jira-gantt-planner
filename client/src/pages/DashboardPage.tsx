@@ -309,8 +309,7 @@ export default function DashboardPage() {
             return d
           }).map(day => {
             const dayStr = day.toISOString().slice(0, 10)
-            const dayItems = weekItems.filter(i => i.dueDate === dayStr)
-            // Also check all loaded items for next week due dates
+            // Check all loaded items for next week due dates
             const nextWeekJiraItems = allLoaded.filter(i => i.dueDate === dayStr && i.statusCategory !== 'done')
             const nextWeekFollowUps = followUps.filter((fu: any) => fu.dueDate === dayStr)
             const combined = [
