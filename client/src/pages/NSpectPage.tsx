@@ -605,9 +605,9 @@ export default function NSpectPage() {
           <p className="text-sm">{entries.length === 0 ? 'No entries yet.' : 'No matching entries.'}</p>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto overflow-y-auto rounded-xl border border-gray-200" style={{ maxHeight: 'calc(100vh - 250px)' }}>
           <table className="w-full text-left" style={{ tableLayout: 'auto', minWidth: '1400px' }}>
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">nSpect ID</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase min-w-[200px]">Component / Service</th>
