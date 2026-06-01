@@ -606,11 +606,11 @@ export default function NSpectPage() {
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-gray-200">
-          <table className="w-full text-left table-auto">
+          <table className="w-full text-left" style={{ tableLayout: 'auto', minWidth: '1400px' }}>
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">nSpect ID</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Component / Service</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase min-w-[200px]">Component / Service</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">PLC Parent</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Security Eng</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Eng</th>
@@ -629,8 +629,8 @@ export default function NSpectPage() {
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <NSpectIdLink nspectId={entry.nspectId} nspectLink={entry.nspectLink} />
                   </td>
-                  <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
-                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 border-0 p-0 focus:outline-none" style={{ wordBreak: 'break-word' }} placeholder="—" />
+                  <td className="px-3 py-3 align-top min-w-[200px]" style={{ wordBreak: 'break-word' }}>
+                    <input type="text" value={entry.productName} onChange={e => updateEntry(entry.id, 'productName', e.target.value)} className="w-full bg-transparent text-sm text-gray-800 font-medium border-0 p-0 focus:outline-none" placeholder="—" />
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <ParentKeyCell entry={entry} onSave={(id, key) => { updateEntry(id, 'parentKey', key); if (key.match(/^[A-Z]+-\d+$/)) fetchByParentKey(id, key) }} />
