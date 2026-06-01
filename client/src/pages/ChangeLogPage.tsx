@@ -34,13 +34,16 @@ export default function ChangeLogPage() {
       // Fetch recently updated items
       const sinceDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       
+      // Scope to Jen's dev teams + assigned to her
+      const teamFilter = `AND ("Development Team" in ("Storage Infrastructure APIs", "USD Storage API", "Caching Services", Portal, ovstorage, ovpackage) OR assignee = currentUser() OR cf[12712] = currentUser())`
+
       // Get items updated in the timeframe
-      const updatedJql = `project = OMPE AND updated >= "${sinceDate}" AND status != Done ORDER BY updated DESC`
+      const updatedJql = `project = OMPE AND updated >= "${sinceDate}" AND status != Done ${teamFilter} ORDER BY updated DESC`
       const updatedRes = await axios.get('/api/jira/query', { params: { jql: updatedJql } })
       const updatedIssues = updatedRes.data.issues || []
 
       // Get newly created items
-      const createdJql = `project = OMPE AND created >= "${sinceDate}" ORDER BY created DESC`
+      const createdJql = `project = OMPE AND created >= "${sinceDate}" ${teamFilter} ORDER BY created DESC`
       const createdRes = await axios.get('/api/jira/query', { params: { jql: createdJql } })
       const createdIssues = (createdRes.data.issues || []).map((i: any) => ({
         key: i.key,
