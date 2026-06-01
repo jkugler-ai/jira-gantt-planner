@@ -14,7 +14,8 @@ import {
   LayoutDashboard,
   ClipboardList,
   Link2,
-  Shield
+  Shield,
+  History
 } from 'lucide-react'
 
 const dataPages = [
@@ -139,6 +140,19 @@ export default function Layout() {
           <div>
             <p className="px-3 mb-1 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tools</p>
             <div className="space-y-0.5">
+              <NavLink
+                to="/changelog"
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                    isActive
+                      ? 'bg-[#76B900]/10 text-[#76B900]'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`
+                }
+              >
+                <History className="w-4 h-4" />
+                Change Log
+              </NavLink>
               <NavLink
                 to="/links"
                 className={({ isActive }) =>

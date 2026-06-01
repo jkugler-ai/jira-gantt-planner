@@ -6,11 +6,30 @@ interface SavedQuery {
   isDefault: boolean
 }
 
+export interface SavedView {
+  name: string
+  jql: string
+  filters: {
+    devTeam: string[]
+    assignee: string[]
+    programManager: string[]
+    productManager: string[]
+    engPic: string[]
+    status: string[]
+  }
+  isDefault: boolean
+}
+
 interface PageQueries {
   [pageId: string]: SavedQuery[]
 }
 
+interface PageViews {
+  [pageId: string]: SavedView[]
+}
+
 const STORAGE_KEY = 'mission-control-saved-queries'
+const VIEWS_STORAGE_KEY = 'mission-control-saved-views'
 
 export function getSavedQueries(pageId: string): SavedQuery[] {
   try {
@@ -67,6 +86,55 @@ export function getDefaultQuery(pageId: string, fallback: string): string {
   return defaultQ ? defaultQ.jql : fallback
 }
 
+// --- Saved Views (JQL + filters) ---
+
+export function getSavedViews(pageId: string): SavedView[] {
+  try {
+    const data = localStorage.getItem(VIEWS_STORAGE_KEY)
+    if (!data) return []
+    const all: PageViews = JSON.parse(data)
+    return all[pageId] || []
+  } catch {
+    return []
+  }
+}
+
+export function saveView(pageId: string, view: SavedView): void {
+  try {
+    const data = localStorage.getItem(VIEWS_STORAGE_KEY)
+    const all: PageViews = data ? JSON.parse(data) : {}
+    if (!all[pageId]) all[pageId] = []
+    
+    if (view.isDefault) {
+      all[pageId] = all[pageId].map(v => ({ ...v, isDefault: false }))
+    }
+    
+    const idx = all[pageId].findIndex(v => v.name === view.name)
+    if (idx >= 0) {
+      all[pageId][idx] = view
+    } else {
+      all[pageId].push(view)
+    }
+    
+    localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(all))
+  } catch {
+    // silently fail
+  }
+}
+
+export function deleteView(pageId: string, name: string): void {
+  try {
+    const data = localStorage.getItem(VIEWS_STORAGE_KEY)
+    if (!data) return
+    const all: PageViews = JSON.parse(data)
+    if (!all[pageId]) return
+    all[pageId] = all[pageId].filter(v => v.name !== name)
+    localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(all))
+  } catch {
+    // silently fail
+  }
+}
+
 export function useSavedQueries(pageId: string) {
   const [queries, setQueries] = useState<SavedQuery[]>([])
 
@@ -87,4 +155,26 @@ export function useSavedQueries(pageId: string) {
   }
 
   return { queries, save, remove, refresh }
+}
+
+export function useSavedViews(pageId: string) {
+  const [views, setViews] = useState<SavedView[]>([])
+
+  useEffect(() => {
+    setViews(getSavedViews(pageId))
+  }, [pageId])
+
+  const refresh = () => setViews(getSavedViews(pageId))
+
+  const save = (view: SavedView) => {
+    saveView(pageId, view)
+    refresh()
+  }
+
+  const remove = (name: string) => {
+    deleteView(pageId, name)
+    refresh()
+  }
+
+  return { views, save, remove, refresh }
 }

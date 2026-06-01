@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
-import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search, ChevronUp, ChevronDown, Pencil, X, Check } from 'lucide-react'
+import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search, ChevronUp, ChevronDown, Pencil, X, Check, Bookmark } from 'lucide-react'
 import MultiSelect from './MultiSelect'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
-import { useSavedQueries, getDefaultQuery } from '../lib/savedQueries'
+import { useSavedQueries, getDefaultQuery, useSavedViews } from '../lib/savedQueries'
+import type { SavedView } from '../lib/savedQueries'
 
 interface JqlDataPageProps {
   pageId: string
@@ -268,6 +269,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
 
   const { setPageDataset } = useFilterContext()
   const { queries, save, remove } = useSavedQueries(pageId)
+  const { views, save: saveViewFn, remove: removeViewFn } = useSavedViews(pageId)
+  const [showSaveViewDialog, setShowSaveViewDialog] = useState(false)
+  const [saveViewName, setSaveViewName] = useState('')
 
   // Which extra columns to show
   const showPriority = extraColumns.includes('priority')
@@ -386,6 +390,36 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
       setSortField(field)
       setSortDir('asc')
     }
+  }
+
+  function handleSaveView(asDefault: boolean) {
+    if (!saveViewName.trim()) return
+    saveViewFn({
+      name: saveViewName.trim(),
+      jql: jqlInput,
+      filters: {
+        devTeam: devTeamFilter,
+        assignee: assigneeFilter,
+        programManager: programManagerFilter,
+        productManager: productManagerFilter,
+        engPic: engPicFilter,
+        status: statusFilter,
+      },
+      isDefault: asDefault
+    })
+    setShowSaveViewDialog(false)
+    setSaveViewName('')
+  }
+
+  function handleLoadView(view: SavedView) {
+    setJqlInput(view.jql)
+    setJql(view.jql)
+    setDevTeamFilter(view.filters.devTeam || [])
+    setAssigneeFilter(view.filters.assignee || [])
+    setProgramManagerFilter(view.filters.programManager || [])
+    setProductManagerFilter(view.filters.productManager || [])
+    setEngPicFilter(view.filters.engPic || [])
+    setStatusFilter(view.filters.status || [])
   }
 
   const filteredIssues = applyClientFilters(issues)
@@ -612,6 +646,78 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           />
         </div>
       </div>
+
+      {/* Saved Views */}
+      {(views.length > 0 || true) && (
+        <div className="mb-4 flex items-center gap-2 flex-wrap">
+          <Bookmark className="w-4 h-4 text-gray-400" />
+          {views.map(v => (
+            <div key={v.name} className="inline-flex items-center gap-0.5 group">
+              <button
+                onClick={() => handleLoadView(v)}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition ${
+                  v.isDefault
+                    ? 'bg-[#76B900]/15 text-[#76B900] border border-[#76B900]/30'
+                    : 'bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100'
+                }`}
+                title={`JQL: ${v.jql}\nFilters: ${Object.entries(v.filters).filter(([,val]) => val.length > 0).map(([k,val]) => `${k}: ${val.join(', ')}`).join('; ') || 'none'}`}
+              >
+                {v.isDefault && <Star className="w-3 h-3 inline mr-0.5" />}
+                {v.name}
+              </button>
+              <button
+                onClick={() => removeViewFn(v.name)}
+                className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-red-500 transition"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => setShowSaveViewDialog(true)}
+            className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200 hover:bg-gray-100 transition"
+          >
+            + Save View
+          </button>
+        </div>
+      )}
+
+      {/* Save View Dialog */}
+      {showSaveViewDialog && (
+        <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+          <p className="text-xs text-purple-700 mb-2">Save current JQL + filters as a named view:</p>
+          <div className="flex gap-2 items-center">
+            <input
+              type="text"
+              value={saveViewName}
+              onChange={e => setSaveViewName(e.target.value)}
+              placeholder="View name (e.g. 'Standup', 'Triage')..."
+              className="flex-1 px-3 py-1.5 border border-purple-200 rounded-lg text-sm focus:ring-2 focus:ring-[#76B900] outline-none"
+              autoFocus
+              onKeyDown={e => e.key === 'Enter' && handleSaveView(false)}
+            />
+            <button
+              onClick={() => handleSaveView(false)}
+              className="px-3 py-1.5 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => handleSaveView(true)}
+              className="px-3 py-1.5 bg-[#76B900] text-white rounded-lg text-xs font-medium hover:bg-[#5a8f00]"
+              title="Save as default view for this page"
+            >
+              Save as Default
+            </button>
+            <button
+              onClick={() => setShowSaveViewDialog(false)}
+              className="px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
