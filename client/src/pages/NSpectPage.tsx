@@ -630,12 +630,14 @@ export default function NSpectPage() {
                     <NSpectIdLink nspectId={entry.nspectId} nspectLink={entry.nspectLink} />
                   </td>
                   <td className="px-3 py-3 align-top min-w-[200px]" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                    <span
-                      className="text-sm text-gray-800 font-medium block"
-                      title={entry.productName}
-                    >
-                      {entry.productName || '—'}
-                    </span>
+                    <input
+                      type="text"
+                      value={entry.productName}
+                      onChange={e => updateEntry(entry.id, 'productName', e.target.value)}
+                      className="w-full bg-transparent text-sm text-gray-800 font-medium border-0 p-0 focus:outline-none"
+                      style={{ wordBreak: 'break-word' }}
+                      placeholder="Component name..."
+                    />
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <ParentKeyCell entry={entry} onSave={(id, key) => { updateEntry(id, 'parentKey', key); if (key.match(/^[A-Z]+-\d+$/)) fetchByParentKey(id, key) }} />

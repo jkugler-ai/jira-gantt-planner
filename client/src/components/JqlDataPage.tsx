@@ -17,6 +17,8 @@ interface JqlDataPageProps {
   hideProductManagerFilter?: boolean
   highlightUntriaged?: boolean
   flagStaleMonths?: number
+  hideStartDate?: boolean
+  hideType?: boolean
 }
 
 interface JiraIssue {
@@ -245,7 +247,7 @@ function SortHeader({ field, label, current, dir, onClick }: {
   )
 }
 
-export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [], showStatusFilter = false, hideProductManagerFilter = false, highlightUntriaged = false, flagStaleMonths = 0 }: JqlDataPageProps) {
+export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [], showStatusFilter = false, hideProductManagerFilter = false, highlightUntriaged = false, flagStaleMonths = 0, hideStartDate = false, hideType = false }: JqlDataPageProps) {
   const [jql, setJql] = useState('')
   const [jqlInput, setJqlInput] = useState('')
   const [issues, setIssues] = useState<JiraIssue[]>([])
@@ -483,7 +485,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
     return sorted
   }, [filteredIssues, sortField, sortDir])
 
-  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0) + (showReporter ? 1 : 0) + (showStatusUpdate ? 1 : 0) + (showStaleness ? 1 : 0)
+  const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0) + (showReporter ? 1 : 0) + (showStatusUpdate ? 1 : 0) + (showStaleness ? 1 : 0) - (hideStartDate ? 1 : 0) - (hideType ? 1 : 0)
 
   return (
     <div className="p-8">
@@ -740,7 +742,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                 {showCreated && (
                   <SortHeader field="created" label="Created" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
-                <SortHeader field="type" label="Type" current={sortField} dir={sortDir} onClick={handleSort} />
+                {!hideType && <SortHeader field="type" label="Type" current={sortField} dir={sortDir} onClick={handleSort} />}
                 <SortHeader field="summary" label="Summary" current={sortField} dir={sortDir} onClick={handleSort} />
                 <SortHeader field="status" label="Status" current={sortField} dir={sortDir} onClick={handleSort} />
                 {showPriority && (
@@ -757,7 +759,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                 {showStatusUpdate && (
                   <SortHeader field="statusUpdate" label="Status Update" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
-                <SortHeader field="startDate" label="Start" current={sortField} dir={sortDir} onClick={handleSort} />
+                {!hideStartDate && <SortHeader field="startDate" label="Start" current={sortField} dir={sortDir} onClick={handleSort} />}
                 <SortHeader field="dueDate" label="Due" current={sortField} dir={sortDir} onClick={handleSort} />
               </tr>
             </thead>
@@ -821,7 +823,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                         {isStale && <span className="ml-1 text-[10px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-medium" title="Open > 1 month — review?">⚠️ stale</span>}
                       </td>
                     )}
-                    <td className="px-4 py-3 text-xs text-gray-500">{issue.type || '—'}</td>
+                    {!hideType && <td className="px-4 py-3 text-xs text-gray-500">{issue.type || '—'}</td>}
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 max-w-md truncate">{issue.summary}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={issue.status} category={issue.statusCategory} />
@@ -850,7 +852,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                         />
                       </td>
                     )}
-                    <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
+                    {!hideStartDate && <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.dueDate || '—'}</td>
                   </tr>
                   )

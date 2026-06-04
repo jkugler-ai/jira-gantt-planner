@@ -12,6 +12,8 @@ export default function BugsPage() {
       hideProductManagerFilter={true}
       highlightUntriaged={true}
       flagStaleMonths={1}
+      hideStartDate={true}
+      hideType={true}
     />
   )
 }
