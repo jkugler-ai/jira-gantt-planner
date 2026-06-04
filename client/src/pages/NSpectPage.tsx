@@ -58,13 +58,25 @@ function MultiLinkDisplay({ value, type }: { value: string; type: 'nvbugs' | 'ns
   )
 }
 
-function NSpectIdCell({ entry, onSave }: { entry: NSpectEntry; onSave: (id: string, nspectId: string) => void }) {
+function NSpectIdCell({ entry, onSave }: { entry: NSpectEntry; onSave: (id: string, fields: { nspectId: string; nspectLink: string }) => void }) {
   const [editing, setEditing] = useState(false)
-  const [draft, setDraft] = useState(entry.nspectId || '')
+  const [draftId, setDraftId] = useState(entry.nspectId || '')
+  const [draftLink, setDraftLink] = useState(entry.nspectLink || '')
 
   useEffect(() => {
-    setDraft(entry.nspectId || '')
-  }, [entry.nspectId])
+    setDraftId(entry.nspectId || '')
+    setDraftLink(entry.nspectLink || '')
+  }, [entry.nspectId, entry.nspectLink])
+
+  const commit = () => {
+    onSave(entry.id, { nspectId: draftId.trim(), nspectLink: draftLink.trim() })
+    setEditing(false)
+  }
+  const cancel = () => {
+    setDraftId(entry.nspectId || '')
+    setDraftLink(entry.nspectLink || '')
+    setEditing(false)
+  }
 
   if (!editing && entry.nspectId) {
     const url = entry.nspectLink || `https://nspect.nvidia.com/registrations?search=${encodeURIComponent(entry.nspectId)}`
@@ -74,24 +86,48 @@ function NSpectIdCell({ entry, onSave }: { entry: NSpectEntry; onSave: (id: stri
           {entry.nspectId}
           <ExternalLink className="w-3 h-3 flex-shrink-0" />
         </a>
-        <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-gray-500 transition" title="Edit nSpect ID">
+        <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-gray-500 transition" title="Edit nSpect ID & link">
           <span className="text-[10px]">✏️</span>
         </button>
       </div>
     )
   }
 
+  if (!editing && !entry.nspectId) {
+    return (
+      <button
+        onClick={() => setEditing(true)}
+        className="text-sm font-mono text-gray-400 hover:text-gray-600 border-b border-dashed border-gray-300 cursor-text"
+      >
+        — click to add
+      </button>
+    )
+  }
+
   return (
-    <input
-      type="text"
-      autoFocus={editing}
-      value={draft}
-      onChange={e => setDraft(e.target.value)}
-      onBlur={() => { onSave(entry.id, draft.trim()); setEditing(false) }}
-      onKeyDown={e => { if (e.key === 'Enter') { onSave(entry.id, draft.trim()); setEditing(false) } if (e.key === 'Escape') { setDraft(entry.nspectId || ''); setEditing(false) } }}
-      className="w-full bg-transparent text-sm font-mono text-gray-600 border-0 border-b border-dashed border-gray-300 p-0 focus:outline-none focus:border-[#76B900]"
-      placeholder="NSPECT-XXXX-XXXX"
-    />
+    <div className="flex flex-col gap-1">
+      <input
+        type="text"
+        autoFocus
+        value={draftId}
+        onChange={e => setDraftId(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel() }}
+        className="w-full bg-white text-sm font-mono text-gray-700 border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#76B900]/50"
+        placeholder="NSPECT-XXXX-XXXX"
+      />
+      <input
+        type="text"
+        value={draftLink}
+        onChange={e => setDraftLink(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel() }}
+        className="w-full bg-white text-xs text-gray-500 border border-gray-200 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#76B900]/50"
+        placeholder="https://nspect.nvidia.com/..."
+      />
+      <div className="flex gap-1">
+        <button onClick={commit} className="text-[10px] text-green-600 hover:text-green-800 font-medium">✓ save</button>
+        <button onClick={cancel} className="text-[10px] text-gray-400 hover:text-gray-600">✗ cancel</button>
+      </div>
+    </div>
   )
 }
 
@@ -653,7 +689,7 @@ export default function NSpectPage() {
               {filtered.map(entry => (
                 <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${entry.locked ? 'bg-amber-50/50' : ''}`}>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
-                    <NSpectIdCell entry={entry} onSave={(id, nspectId) => updateEntry(id, 'nspectId', nspectId)} />
+                    <NSpectIdCell entry={entry} onSave={(id, fields) => { updateEntry(id, 'nspectId', fields.nspectId); updateEntry(id, 'nspectLink', fields.nspectLink) }} />
                   </td>
                   <td className="px-3 py-3 align-top min-w-[200px]" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                     <input
