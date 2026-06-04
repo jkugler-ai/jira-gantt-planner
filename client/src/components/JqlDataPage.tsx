@@ -92,11 +92,11 @@ function PriorityBadge({ priority }: { priority: string }) {
 function getNvbugsLink(issue: JiraIssue): React.ReactNode {
   const id = issue.nvbugsId
   if (!id) return <span className="text-gray-400">—</span>
-  // Extract just the numeric ID if it's a full URL
-  const numericId = String(id).replace(/^https?:\/\/nvbugs\.nvidia\.com\//, '').replace(/\D/g, '') || id
+  // Extract just the numeric ID if it's a full URL (handles nvbugs and nvbugspro)
+  const numericId = String(id).replace(/^https?:\/\/nvbugs(?:pro)?\.nvidia\.com\/(?:bug\/)?\//, '').replace(/\D/g, '') || String(id).replace(/\D/g, '') || id
   return (
     <a
-      href={`https://nvbugs.nvidia.com/${numericId}`}
+      href={`https://nvbugs.nvidia.com/bug/${numericId}`}
       target="_blank"
       rel="noopener noreferrer"
       className="text-[#76B900] hover:underline text-xs font-medium"
@@ -731,6 +731,12 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <SortHeader field="key" label="Key" current={sortField} dir={sortDir} onClick={handleSort} />
+                {showNvbugs && (
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">NVBugs</th>
+                )}
+                {showStaleness && (
+                  <SortHeader field="staleness" label="Staleness" current={sortField} dir={sortDir} onClick={handleSort} />
+                )}
                 {showCreated && (
                   <SortHeader field="created" label="Created" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
@@ -748,14 +754,8 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                 {showFixVersion && (
                   <SortHeader field="fixVersion" label="Fix Version" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
-                {showNvbugs && (
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">NVBugs</th>
-                )}
                 {showStatusUpdate && (
                   <SortHeader field="statusUpdate" label="Status Update" current={sortField} dir={sortDir} onClick={handleSort} />
-                )}
-                {showStaleness && (
-                  <SortHeader field="staleness" label="Staleness" current={sortField} dir={sortDir} onClick={handleSort} />
                 )}
                 <SortHeader field="startDate" label="Start" current={sortField} dir={sortDir} onClick={handleSort} />
                 <SortHeader field="dueDate" label="Due" current={sortField} dir={sortDir} onClick={handleSort} />
@@ -798,6 +798,23 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </td>
+                    {showNvbugs && (
+                      <td className="px-4 py-3 text-sm">
+                        {getNvbugsLink(issue)}
+                      </td>
+                    )}
+                    {showStaleness && (
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const staleness = getStalenessLevel(issue.updated)
+                          return (
+                            <span className={`text-xs font-medium ${staleness.color}`} title={`Last updated: ${issue.updated || 'unknown'}`}>
+                              {staleness.label}{staleness.days > 0 ? ` (${staleness.days}d)` : ''}
+                            </span>
+                          )
+                        })()}
+                      </td>
+                    )}
                     {showCreated && (
                       <td className="px-4 py-3 text-sm text-gray-500">
                         {issue.created || '—'}
@@ -822,11 +839,6 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     {showFixVersion && (
                       <td className="px-4 py-3 text-sm text-gray-500">{issue.fixVersion || '—'}</td>
                     )}
-                    {showNvbugs && (
-                      <td className="px-4 py-3 text-sm">
-                        {getNvbugsLink(issue)}
-                      </td>
-                    )}
                     {showStatusUpdate && (
                       <td className="px-4 py-3">
                         <EditableStatusUpdate
@@ -836,18 +848,6 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                             setIssues(prev => prev.map(i => i.key === issue.key ? { ...i, statusUpdate: newVal } : i))
                           }}
                         />
-                      </td>
-                    )}
-                    {showStaleness && (
-                      <td className="px-4 py-3">
-                        {(() => {
-                          const staleness = getStalenessLevel(issue.updated)
-                          return (
-                            <span className={`text-xs font-medium ${staleness.color}`} title={`Last updated: ${issue.updated || 'unknown'}`}>
-                              {staleness.label}{staleness.days > 0 ? ` (${staleness.days}d)` : ''}
-                            </span>
-                          )
-                        })()}
                       </td>
                     )}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>
