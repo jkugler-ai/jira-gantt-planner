@@ -58,14 +58,40 @@ function MultiLinkDisplay({ value, type }: { value: string; type: 'nvbugs' | 'ns
   )
 }
 
-function NSpectIdLink({ nspectId, nspectLink }: { nspectId: string; nspectLink: string }) {
-  if (!nspectId) return <span className="text-sm font-mono text-gray-400">—</span>
-  const url = nspectLink || `https://nspect.nvidia.com/registrations?search=${encodeURIComponent(nspectId)}`
+function NSpectIdCell({ entry, onSave }: { entry: NSpectEntry; onSave: (id: string, nspectId: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(entry.nspectId || '')
+
+  useEffect(() => {
+    setDraft(entry.nspectId || '')
+  }, [entry.nspectId])
+
+  if (!editing && entry.nspectId) {
+    const url = entry.nspectLink || `https://nspect.nvidia.com/registrations?search=${encodeURIComponent(entry.nspectId)}`
+    return (
+      <div className="flex items-center gap-1">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline inline-flex items-center gap-1">
+          {entry.nspectId}
+          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+        </a>
+        <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-gray-500 transition" title="Edit nSpect ID">
+          <span className="text-[10px]">✏️</span>
+        </button>
+      </div>
+    )
+  }
+
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-mono text-[#76B900] font-medium hover:underline inline-flex items-center gap-1">
-      {nspectId}
-      <ExternalLink className="w-3 h-3 flex-shrink-0" />
-    </a>
+    <input
+      type="text"
+      autoFocus={editing}
+      value={draft}
+      onChange={e => setDraft(e.target.value)}
+      onBlur={() => { onSave(entry.id, draft.trim()); setEditing(false) }}
+      onKeyDown={e => { if (e.key === 'Enter') { onSave(entry.id, draft.trim()); setEditing(false) } if (e.key === 'Escape') { setDraft(entry.nspectId || ''); setEditing(false) } }}
+      className="w-full bg-transparent text-sm font-mono text-gray-600 border-0 border-b border-dashed border-gray-300 p-0 focus:outline-none focus:border-[#76B900]"
+      placeholder="NSPECT-XXXX-XXXX"
+    />
   )
 }
 
@@ -627,7 +653,7 @@ export default function NSpectPage() {
               {filtered.map(entry => (
                 <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${entry.locked ? 'bg-amber-50/50' : ''}`}>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
-                    <NSpectIdLink nspectId={entry.nspectId} nspectLink={entry.nspectLink} />
+                    <NSpectIdCell entry={entry} onSave={(id, nspectId) => updateEntry(id, 'nspectId', nspectId)} />
                   </td>
                   <td className="px-3 py-3 align-top min-w-[200px]" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                     <input
