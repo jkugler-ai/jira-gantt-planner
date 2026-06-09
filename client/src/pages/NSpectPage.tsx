@@ -210,6 +210,52 @@ function ParentKeyCell({ entry, onSave }: { entry: NSpectEntry; onSave: (id: str
   )
 }
 
+function ProductNameCell({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+
+  useEffect(() => {
+    setDraft(value)
+  }, [value])
+
+  if (editing) {
+    return (
+      <textarea
+        autoFocus
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={() => {
+          if (draft.trim() !== value) onChange(draft.trim())
+          setEditing(false)
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault()
+            ;(e.target as HTMLTextAreaElement).blur()
+          } else if (e.key === 'Escape') {
+            setDraft(value)
+            setEditing(false)
+          }
+        }}
+        className="w-full bg-white text-sm text-gray-800 font-medium border border-gray-300 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#76B900]/50 resize-none"
+        rows={2}
+        placeholder="Component name..."
+      />
+    )
+  }
+
+  return (
+    <span
+      onClick={() => setEditing(true)}
+      className="text-sm text-gray-800 font-medium cursor-text block"
+      style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}
+      title="Click to edit"
+    >
+      {value || <span className="text-gray-400">Component name...</span>}
+    </span>
+  )
+}
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -691,15 +737,8 @@ export default function NSpectPage() {
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <NSpectIdCell entry={entry} onSave={(id, fields) => { updateEntry(id, 'nspectId', fields.nspectId); updateEntry(id, 'nspectLink', fields.nspectLink) }} />
                   </td>
-                  <td className="px-3 py-3 align-top min-w-[200px]" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
-                    <input
-                      type="text"
-                      value={entry.productName}
-                      onChange={e => updateEntry(entry.id, 'productName', e.target.value)}
-                      className="w-full bg-transparent text-sm text-gray-800 font-medium border-0 p-0 focus:outline-none"
-                      style={{ wordBreak: 'break-word' }}
-                      placeholder="Component name..."
-                    />
+                  <td className="px-3 py-3 align-top min-w-[200px] max-w-[300px]" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
+                    <ProductNameCell value={entry.productName} onChange={(val) => updateEntry(entry.id, 'productName', val)} />
                   </td>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
                     <ParentKeyCell entry={entry} onSave={(id, key) => { updateEntry(id, 'parentKey', key); if (key.match(/^[A-Z]+-\d+$/)) fetchByParentKey(id, key) }} />
