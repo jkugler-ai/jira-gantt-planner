@@ -483,10 +483,7 @@ router.post('/transitions/:key', requireAuth, async (req, res) => {
 // GET /api/jira/nspect/lookup - Look up PLC parent by nSpect ID and pull categorized child data
 router.get('/nspect/lookup', requireAuth, async (req, res) => {
   try {
-    const { nspectId } = req.query;
-    if (!nspectId) return res.status(400).json({ error: 'nspectId is required' });
-
-    // Also accept optional productName for name-based search fallback
+    // Accept nspectId and/or productName for search
     const { nspectId, productName } = req.query;
     if (!nspectId && !productName) return res.status(400).json({ error: 'nspectId or productName is required' });
 
