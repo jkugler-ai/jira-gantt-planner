@@ -31,6 +31,28 @@ interface PageViews {
 const STORAGE_KEY = 'mission-control-saved-queries'
 const VIEWS_STORAGE_KEY = 'mission-control-saved-views'
 
+// --- Server helpers (fire-and-forget writes, best-effort reads) ---
+
+async function fetchFromServer<T>(key: string): Promise<T | null> {
+  try {
+    const res = await fetch(`/api/storage/${key}`)
+    if (res.ok) {
+      return await res.json()
+    }
+  } catch {}
+  return null
+}
+
+function writeToServer(key: string, data: unknown): void {
+  fetch(`/api/storage/${key}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }).catch(() => {})
+}
+
+// --- Queries ---
+
 export function getSavedQueries(pageId: string): SavedQuery[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY)
@@ -62,6 +84,7 @@ export function saveQuery(pageId: string, query: SavedQuery): void {
     }
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+    writeToServer('saved-queries', all)
   } catch {
     // silently fail
   }
@@ -75,6 +98,7 @@ export function deleteQuery(pageId: string, name: string): void {
     if (!all[pageId]) return
     all[pageId] = all[pageId].filter(q => q.name !== name)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(all))
+    writeToServer('saved-queries', all)
   } catch {
     // silently fail
   }
@@ -117,6 +141,7 @@ export function saveView(pageId: string, view: SavedView): void {
     }
     
     localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(all))
+    writeToServer('saved-views', all)
   } catch {
     // silently fail
   }
@@ -130,16 +155,38 @@ export function deleteView(pageId: string, name: string): void {
     if (!all[pageId]) return
     all[pageId] = all[pageId].filter(v => v.name !== name)
     localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(all))
+    writeToServer('saved-views', all)
   } catch {
     // silently fail
   }
 }
 
+// --- Hooks with server hydration ---
+
 export function useSavedQueries(pageId: string) {
   const [queries, setQueries] = useState<SavedQuery[]>([])
 
   useEffect(() => {
+    // Load from localStorage immediately
     setQueries(getSavedQueries(pageId))
+
+    // Then try to hydrate from server
+    fetchFromServer<PageQueries>('saved-queries').then(serverData => {
+      if (serverData) {
+        const localData = localStorage.getItem(STORAGE_KEY)
+        const local: PageQueries = localData ? JSON.parse(localData) : {}
+        // If server has data but localStorage doesn't (or is empty for this page)
+        if (serverData[pageId]?.length && !(local[pageId]?.length)) {
+          // Merge server into local
+          const merged = { ...local, ...serverData }
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+          setQueries(merged[pageId] || [])
+        } else if (local[pageId]?.length && !serverData[pageId]?.length) {
+          // Backfill server with localStorage data
+          writeToServer('saved-queries', local)
+        }
+      }
+    })
   }, [pageId])
 
   const refresh = () => setQueries(getSavedQueries(pageId))
@@ -161,7 +208,23 @@ export function useSavedViews(pageId: string) {
   const [views, setViews] = useState<SavedView[]>([])
 
   useEffect(() => {
+    // Load from localStorage immediately
     setViews(getSavedViews(pageId))
+
+    // Then try to hydrate from server
+    fetchFromServer<PageViews>('saved-views').then(serverData => {
+      if (serverData) {
+        const localData = localStorage.getItem(VIEWS_STORAGE_KEY)
+        const local: PageViews = localData ? JSON.parse(localData) : {}
+        if (serverData[pageId]?.length && !(local[pageId]?.length)) {
+          const merged = { ...local, ...serverData }
+          localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(merged))
+          setViews(merged[pageId] || [])
+        } else if (local[pageId]?.length && !serverData[pageId]?.length) {
+          writeToServer('saved-views', local)
+        }
+      }
+    })
   }, [pageId])
 
   const refresh = () => setViews(getSavedViews(pageId))

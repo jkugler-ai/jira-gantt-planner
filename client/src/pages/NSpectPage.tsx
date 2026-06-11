@@ -273,26 +273,63 @@ export default function NSpectPage() {
   const [undoStack, setUndoStack] = useState<NSpectEntry[][]>([])
   const [saveFlash, setSaveFlash] = useState(false)
 
-  // Load from localStorage, seed if empty
+  // Load from server first, fall back to localStorage, then SEED_DATA
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        // Migrate: add new fields if missing
-        setEntries(parsed.map((e: any) => ({
-          ...e,
-          locked: e.locked ?? false,
-          eng: e.eng ?? '',
-          fixVersion: e.fixVersion ?? '',
-          lastUpdated: e.lastUpdated ?? '',
-        })))
-      } else {
-        const seeded = SEED_DATA.map(s => ({ ...s, id: crypto.randomUUID() }))
-        setEntries(seeded)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
-      }
-    } catch {}
+    const load = async () => {
+      // Try server first
+      try {
+        const res = await fetch('/api/storage/nspect-entries')
+        if (res.ok) {
+          const parsed = await res.json()
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const migrated = parsed.map((e: any) => ({
+              ...e,
+              locked: e.locked ?? false,
+              eng: e.eng ?? '',
+              fixVersion: e.fixVersion ?? '',
+              lastUpdated: e.lastUpdated ?? '',
+            }))
+            setEntries(migrated)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated))
+            return
+          }
+        }
+      } catch {}
+
+      // Fall back to localStorage
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          const migrated = parsed.map((e: any) => ({
+            ...e,
+            locked: e.locked ?? false,
+            eng: e.eng ?? '',
+            fixVersion: e.fixVersion ?? '',
+            lastUpdated: e.lastUpdated ?? '',
+          }))
+          setEntries(migrated)
+          // Backfill server with localStorage data
+          fetch('/api/storage/nspect-entries', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(migrated),
+          }).catch(() => {})
+          return
+        }
+      } catch {}
+
+      // Fall back to seed data
+      const seeded = SEED_DATA.map(s => ({ ...s, id: crypto.randomUUID() }))
+      setEntries(seeded)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
+      fetch('/api/storage/nspect-entries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(seeded),
+      }).catch(() => {})
+    }
+    load()
   }, [])
 
   const save = (updatedOrFn: NSpectEntry[] | ((prev: NSpectEntry[]) => NSpectEntry[]), pushUndo = true) => {
@@ -301,7 +338,14 @@ export default function NSpectPage() {
       if (pushUndo && prev.length > 0) {
         setUndoStack(s => [...s.slice(-19), prev])
       }
+      // Write to localStorage (fast cache)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      // Write to server (durable backup)
+      fetch('/api/storage/nspect-entries', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {})
       return updated
     })
     setSaveFlash(true)
@@ -314,6 +358,11 @@ export default function NSpectPage() {
     setUndoStack(s => s.slice(0, -1))
     setEntries(prev)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(prev))
+    fetch('/api/storage/nspect-entries', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(prev),
+    }).catch(() => {})
   }
 
   const cloneEntry = (entry: NSpectEntry) => {
