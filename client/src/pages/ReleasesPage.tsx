@@ -197,7 +197,7 @@ export default function ReleasesPage() {
 
       {viewMode === 'table' ? (
         <JqlDataPage
-          pageId="releases"
+          pageId="releases-table"
           title=""
           defaultJql={DEFAULT_JQL}
           extraColumns={['statusUpdate', 'fixVersion', 'staleness']}
