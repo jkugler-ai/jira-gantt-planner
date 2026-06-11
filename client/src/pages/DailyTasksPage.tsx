@@ -143,7 +143,7 @@ function getRisk(task: JiraTask): { label: string; color: string; score: number 
   return { label: 'OK', color: 'bg-green-100 text-green-700', score }
 }
 
-type SortField = 'key' | 'priority' | 'status' | 'dueDate' | 'updated' | 'risk' | 'staleness' | 'assignee' | 'devTeam'
+type SortField = 'key' | 'priority' | 'status' | 'type' | 'dueDate' | 'updated' | 'risk' | 'staleness' | 'assignee' | 'devTeam'
 type SortDir = 'asc' | 'desc'
 
 export default function DailyTasksPage() {
@@ -368,6 +368,7 @@ export default function DailyTasksPage() {
           break
         }
         case 'status': cmp = (a.status || '').localeCompare(b.status || ''); break
+        case 'type': cmp = (a.type || '').localeCompare(b.type || ''); break
         case 'dueDate': {
           const da = a.dueDate ? new Date(a.dueDate).getTime() : Infinity
           const db = b.dueDate ? new Date(b.dueDate).getTime() : Infinity
@@ -662,6 +663,7 @@ export default function DailyTasksPage() {
                       <SortHeader field="key" label="Key" current={sortField} dir={sortDir} onClick={handleSort} />
                       <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Summary</th>
                       <SortHeader field="status" label="Status" current={sortField} dir={sortDir} onClick={handleSort} />
+                      <SortHeader field="type" label="Type" current={sortField} dir={sortDir} onClick={handleSort} />
                       <SortHeader field="priority" label="Priority" current={sortField} dir={sortDir} onClick={handleSort} />
                       <SortHeader field="assignee" label="Assignee" current={sortField} dir={sortDir} onClick={handleSort} />
                       <SortHeader field="devTeam" label="Dev Team" current={sortField} dir={sortDir} onClick={handleSort} />
@@ -695,6 +697,7 @@ export default function DailyTasksPage() {
                             <td className="px-3 py-2">
                               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[task.statusCategory] || 'bg-gray-100 text-gray-600'}`}>{task.status}</span>
                             </td>
+                            <td className="px-3 py-2 text-xs text-gray-500">{task.type || '—'}</td>
                             <td className={`px-3 py-2 text-xs font-medium ${priorityColors[task.priority] || 'text-gray-500'}`}>{task.priority}</td>
                             <td className="px-3 py-2 text-xs text-gray-600">{task.assignee || '—'}</td>
                             <td className="px-3 py-2 text-xs text-gray-500">{task.devTeam || '—'}</td>
