@@ -6,6 +6,8 @@ import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { useSavedQueries, getDefaultQuery, useSavedViews } from '../lib/savedQueries'
 import type { SavedView } from '../lib/savedQueries'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissButton, DismissedPanel } from './DismissControls'
 
 interface JqlDataPageProps {
   pageId: string
@@ -19,6 +21,7 @@ interface JqlDataPageProps {
   flagStaleMonths?: number
   hideStartDate?: boolean
   hideType?: boolean
+  showFixVersionSummary?: boolean
 }
 
 interface JiraIssue {
@@ -247,7 +250,7 @@ function SortHeader({ field, label, current, dir, onClick }: {
   )
 }
 
-export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [], showStatusFilter = false, hideProductManagerFilter = false, highlightUntriaged = false, flagStaleMonths = 0, hideStartDate = false, hideType = false }: JqlDataPageProps) {
+export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extraColumns = [], showStatusFilter = false, hideProductManagerFilter = false, highlightUntriaged = false, flagStaleMonths = 0, hideStartDate = false, hideType = false, showFixVersionSummary = false }: JqlDataPageProps) {
   const [jql, setJql] = useState('')
   const [jqlInput, setJqlInput] = useState('')
   const [issues, setIssues] = useState<JiraIssue[]>([])
@@ -272,6 +275,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   const { setPageDataset } = useFilterContext()
   const { queries, save, remove } = useSavedQueries(pageId)
   const { views, save: saveViewFn, remove: removeViewFn } = useSavedViews(pageId)
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed(pageId)
   const [showSaveViewDialog, setShowSaveViewDialog] = useState(false)
   const [saveViewName, setSaveViewName] = useState('')
 
@@ -328,12 +332,16 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
   useEffect(() => {
     const filtered = applyClientFilters(issues)
     setPageDataset(pageId, filtered as FilteredIssue[])
-  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, statusFilter])
+  }, [issues, devTeamFilter, assigneeFilter, programManagerFilter, productManagerFilter, engPicFilter, statusFilter, dismissed])
 
   // Filter options are derived from current page results above — no separate fetch needed
 
   function applyClientFilters(data: JiraIssue[]): JiraIssue[] {
     let filtered = [...data]
+    // Filter out dismissed tickets
+    if (dismissed.length > 0) {
+      filtered = filtered.filter(i => !dismissed.includes(i.key))
+    }
     if (devTeamFilter.length > 0) {
       filtered = filtered.filter(i => i.devTeam && devTeamFilter.includes(i.devTeam))
     }
@@ -355,11 +363,13 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
     return filtered
   }
 
-  async function fetchData() {
+  async function fetchData(refresh = false) {
     setLoading(true)
     setError('')
     try {
-      const res = await axios.get('/api/jira/query', { params: { jql } })
+      const params: Record<string, string> = { jql }
+      if (refresh) params.refresh = 'true'
+      const res = await axios.get('/api/jira/query', { params })
       setIssues(res.data.issues)
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to fetch data')
@@ -496,8 +506,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           {subtitle && <p className="text-gray-500 text-sm mt-1">{subtitle}</p>}
         </div>
         <button
-          onClick={fetchData}
+          onClick={() => fetchData(true)}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition"
+          title="Refresh data from Jira (bypass cache)"
         >
           <RefreshCw className="w-4 h-4" />
           Refresh
@@ -788,17 +799,20 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     ? 'bg-orange-50 border-b border-orange-100 hover:bg-orange-100 transition'
                     : 'hover:bg-gray-50 border-b border-gray-100 transition'
                   return (
-                  <tr key={issue.key} className={rowClass}>
+                  <tr key={issue.key} className={`${rowClass} group`}>
                     <td className="px-4 py-3">
-                      <a
-                        href={`https://jirasw.nvidia.com/browse/${issue.key}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#76B900] font-medium hover:underline flex items-center gap-1 text-sm"
-                      >
-                        {issue.key}
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
+                      <div className="flex items-center gap-1">
+                        <a
+                          href={`https://jirasw.nvidia.com/browse/${issue.key}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[#76B900] font-medium hover:underline flex items-center gap-1 text-sm"
+                        >
+                          {issue.key}
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                        <DismissButton ticketKey={issue.key} onDismiss={dismiss} />
+                      </div>
                     </td>
                     {showNvbugs && (
                       <td className="px-4 py-3 text-sm">
@@ -868,8 +882,38 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
         <div className="mt-4 text-sm text-gray-500">
           Showing {sortedIssues.length} of {issues.length} issues
           {sortField && <span className="ml-2 text-gray-400">• Sorted by {sortField} ({sortDir})</span>}
+          <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
         </div>
       )}
+
+      {/* Fix Version Summary */}
+      {showFixVersionSummary && !loading && sortedIssues.length > 0 && (() => {
+        const versionMap: Record<string, { open: number; total: number }> = {}
+        for (const issue of sortedIssues) {
+          const fv = issue.fixVersion || 'No Fix Version'
+          if (!versionMap[fv]) versionMap[fv] = { open: 0, total: 0 }
+          versionMap[fv].total++
+          if (issue.statusCategory !== 'done' && issue.status !== 'Done' && issue.status !== 'Closed') {
+            versionMap[fv].open++
+          }
+        }
+        const entries = Object.entries(versionMap).sort((a, b) => a[0].localeCompare(b[0]))
+        return (
+          <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Fix Version Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {entries.map(([version, { open, total }]) => (
+                <div key={version} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+                  <span className="text-xs font-medium text-gray-700 truncate">{version}</span>
+                  <span className={`text-xs font-bold ml-auto ${open > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                    {open}/{total} open
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

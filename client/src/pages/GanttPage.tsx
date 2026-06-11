@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react'
 import { format, addDays, differenceInDays } from 'date-fns'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, RefreshCw, X } from 'lucide-react'
 import { useFilterContext } from '../context/FilterContext'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissedPanel } from '../components/DismissControls'
 
 type ZoomLevel = 'week' | 'month' | 'quarter'
 
@@ -9,9 +11,10 @@ export default function GanttPage() {
   const { activeDataset } = useFilterContext()
   const [zoom, setZoom] = useState<ZoomLevel>('month')
   const containerRef = useRef<HTMLDivElement>(null)
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed('gantt')
 
-  // Only items with at least one date
-  const items = activeDataset.filter(i => i.startDate || i.dueDate)
+  // Only items with at least one date, excluding dismissed
+  const items = activeDataset.filter(i => (i.startDate || i.dueDate) && !dismissed.includes(i.key))
 
   if (activeDataset.length === 0) {
     return (
@@ -82,6 +85,14 @@ export default function GanttPage() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition"
+            title="Refresh data from Jira (reload page)"
+          >
+            <RefreshCw className="w-4 h-4" />
+            🔄
+          </button>
+          <button
             onClick={() => setZoom('week')}
             className={`px-3 py-1.5 text-sm rounded-lg border ${zoom === 'week' ? 'bg-[#76B900] text-white border-[#76B900]' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
           >Week</button>
@@ -106,7 +117,7 @@ export default function GanttPage() {
             {items.map(item => (
               <div
                 key={item.key}
-                className="h-10 flex items-center px-4 border-b border-gray-50 hover:bg-gray-50"
+                className="h-10 flex items-center px-4 border-b border-gray-50 hover:bg-gray-50 group"
               >
                 <a
                   href={`https://jirasw.nvidia.com/browse/${item.key}`}
@@ -116,7 +127,18 @@ export default function GanttPage() {
                 >
                   {item.key}
                 </a>
-                <span className="text-xs text-gray-700 truncate">{item.summary}</span>
+                <span className="text-xs text-gray-700 truncate flex-1">{item.summary}</span>
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Hide ${item.key} from this view? (This won't change anything in Jira)`)) {
+                      dismiss(item.key)
+                    }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity ml-1"
+                  title={`Hide ${item.key}`}
+                >
+                  <X className="w-3 h-3" />
+                </button>
               </div>
             ))}
           </div>
@@ -192,6 +214,7 @@ export default function GanttPage() {
           <div className="w-0.5 h-3 bg-red-400"></div> Today
         </div>
       </div>
+      <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
     </div>
   )
 }

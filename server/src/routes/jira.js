@@ -1,6 +1,9 @@
 const express = require('express');
 const axios = require('axios');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
+const { getCache, setCache } = require('../cache');
 
 const JIRA_BASE = 'https://jirasw.nvidia.com';
 
@@ -59,6 +62,17 @@ router.get('/sprint-goals', requireAuth, async (req, res) => {
     jql += ' ORDER BY cf[13210] ASC, priority ASC, created DESC';
 
     const maxResults = limit > 0 ? limit : 200;
+    const forceRefresh = req.query.refresh === 'true';
+    const cacheKey = `sprint-goals_${jql}_${maxResults}`;
+
+    // Check cache first (unless refresh requested)
+    if (!forceRefresh) {
+      const cached = getCache(cacheKey);
+      if (cached.hit) {
+        return res.json({ ...cached.data, _cached: true, _cachedAt: cached.timestamp });
+      }
+    }
+
     const response = await jiraRequest(req, 'GET',
       `/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuelinks,customfield_10015&expand=names`
     );
@@ -81,7 +95,9 @@ router.get('/sprint-goals', requireAuth, async (req, res) => {
       links: issue.fields.issuelinks || []
     }));
 
-    res.json({ goals, total: response.data.total });
+    const result = { goals, total: response.data.total };
+    setCache(cacheKey, result);
+    res.json(result);
   } catch (err) {
     console.error('Sprint goals fetch error:', err.response?.data || err.message);
     res.status(err.response?.status || 500).json({
@@ -173,6 +189,15 @@ router.get('/issue/:key/comments', requireAuth, async (req, res) => {
 router.get('/gantt-data', requireAuth, async (req, res) => {
   try {
     const jql = 'project = OMPE AND status != Closed AND (duedate is not EMPTY OR "Start date" is not EMPTY) ORDER BY priority ASC';
+    const forceRefresh = req.query.refresh === 'true';
+    const cacheKey = `gantt-data_${jql}`;
+
+    if (!forceRefresh) {
+      const cached = getCache(cacheKey);
+      if (cached.hit) {
+        return res.json({ ...cached.data, _cached: true, _cachedAt: cached.timestamp });
+      }
+    }
 
     const response = await jiraRequest(req, 'GET',
       `/search?jql=${encodeURIComponent(jql)}&maxResults=500&fields=summary,status,assignee,priority,duedate,issuetype,issuelinks,customfield_10015,customfield_14311,customfield_37300`
@@ -197,7 +222,9 @@ router.get('/gantt-data', requireAuth, async (req, res) => {
       }))
     }));
 
-    res.json({ items, total: response.data.total });
+    const result = { items, total: response.data.total };
+    setCache(cacheKey, result);
+    res.json(result);
   } catch (err) {
     console.error('Gantt data error:', err.response?.data || err.message);
     res.status(err.response?.status || 500).json({
@@ -326,6 +353,17 @@ router.get('/query', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'JQL query is required' });
     }
 
+    const forceRefresh = req.query.refresh === 'true';
+    const cacheKey = `query_${jql}`;
+
+    // Check cache first (unless refresh requested)
+    if (!forceRefresh) {
+      const cached = getCache(cacheKey);
+      if (cached.hit) {
+        return res.json({ ...cached.data, _cached: true, _cachedAt: cached.timestamp });
+      }
+    }
+
     const response = await jiraRequest(req, 'GET',
       `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,reporter,priority,duedate,created,updated,issuetype,fixVersions,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,customfield_23812,customfield_31509,customfield_35415,issuelinks,customfield_10015`
     );
@@ -355,7 +393,9 @@ router.get('/query', requireAuth, async (req, res) => {
       links: issue.fields.issuelinks || []
     }));
 
-    res.json({ issues, total: response.data.total });
+    const result = { issues, total: response.data.total };
+    setCache(cacheKey, result);
+    res.json(result);
   } catch (err) {
     console.error('Query error:', err.response?.data || err.message);
     res.status(err.response?.status || 500).json({
@@ -687,6 +727,18 @@ router.get('/issue/:key/plc-data', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('PLC data fetch error:', err.response?.data || err.message);
     res.status(err.response?.status || 500).json({ error: 'Failed to fetch PLC data' });
+  }
+});
+
+// GET /api/jira/holidays - Return NVIDIA company holidays (no auth needed)
+router.get('/holidays', (req, res) => {
+  try {
+    const holidaysPath = path.join(__dirname, '../data/nvidia-holidays.json');
+    const data = JSON.parse(fs.readFileSync(holidaysPath, 'utf-8'));
+    res.json(data);
+  } catch (err) {
+    console.error('Holidays fetch error:', err.message);
+    res.status(500).json({ error: 'Failed to load holidays data' });
   }
 });
 

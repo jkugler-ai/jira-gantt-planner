@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
-import { History, RefreshCw, ArrowRight, Calendar, AlertTriangle } from 'lucide-react'
+import { History, RefreshCw, ArrowRight, Calendar, AlertTriangle, X } from 'lucide-react'
 import axios from 'axios'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissedPanel } from '../components/DismissControls'
 
 interface ChangeItem {
   key: string
@@ -26,6 +28,7 @@ export default function ChangeLogPage() {
   const [loading, setLoading] = useState(true)
   const [days, setDays] = useState(1)
   const [error, setError] = useState('')
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed('changelog')
 
   async function fetchChanges() {
     setLoading(true)
@@ -159,11 +162,11 @@ export default function ChangeLogPage() {
       ) : (
         <div className="space-y-6">
           {/* New Items */}
-          {newItems.length > 0 && (
+          {newItems.filter(item => !dismissed.includes(item.key)).length > 0 && (
             <div className="bg-green-50 rounded-xl border border-green-200 p-5">
               <h2 className="text-sm font-bold text-green-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                New Items ({newItems.length})
+                New Items ({newItems.filter(item => !dismissed.includes(item.key)).length})
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -177,17 +180,30 @@ export default function ChangeLogPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {newItems.map(item => (
-                      <tr key={item.key} className="border-b border-green-100 last:border-0">
+                    {newItems.filter(item => !dismissed.includes(item.key)).map(item => (
+                      <tr key={item.key} className="border-b border-green-100 last:border-0 group">
                         <td className="py-1.5 pr-3">
-                          <a
-                            href={`https://jirasw.nvidia.com/browse/${item.key}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#76B900] font-medium hover:underline whitespace-nowrap"
-                          >
-                            {item.key}
-                          </a>
+                          <div className="flex items-center gap-1">
+                            <a
+                              href={`https://jirasw.nvidia.com/browse/${item.key}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#76B900] font-medium hover:underline whitespace-nowrap"
+                            >
+                              {item.key}
+                            </a>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Hide ${item.key} from this view? (This won't change anything in Jira)`)) {
+                                  dismiss(item.key)
+                                }
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity"
+                              title={`Hide ${item.key}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
                         </td>
                         <td className="py-1.5 pr-3 text-xs text-gray-500">{item.type}</td>
                         <td className="py-1.5 pr-3 text-gray-700">{item.summary}</td>
@@ -202,11 +218,11 @@ export default function ChangeLogPage() {
           )}
 
           {/* Date Shifts */}
-          {changes.filter(c => c.field === 'Due Date' || c.field === 'Start Date').length > 0 && (
+          {changes.filter(c => (c.field === 'Due Date' || c.field === 'Start Date') && !dismissed.includes(c.key)).length > 0 && (
             <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
               <h2 className="text-sm font-bold text-amber-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4" />
-                Date Shifts ({changes.filter(c => c.field === 'Due Date' || c.field === 'Start Date').length})
+                Date Shifts ({changes.filter(c => (c.field === 'Due Date' || c.field === 'Start Date') && !dismissed.includes(c.key)).length})
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -221,18 +237,31 @@ export default function ChangeLogPage() {
                   </thead>
                   <tbody>
                     {changes
-                      .filter(c => c.field === 'Due Date' || c.field === 'Start Date')
+                      .filter(c => (c.field === 'Due Date' || c.field === 'Start Date') && !dismissed.includes(c.key))
                       .map((c, i) => (
-                        <tr key={`${c.key}-${i}`} className="border-b border-amber-100 last:border-0">
+                        <tr key={`${c.key}-${i}`} className="border-b border-amber-100 last:border-0 group">
                           <td className="py-1.5 pr-3">
-                            <a
-                              href={`https://jirasw.nvidia.com/browse/${c.key}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[#76B900] font-medium hover:underline whitespace-nowrap"
-                            >
-                              {c.key}
-                            </a>
+                            <div className="flex items-center gap-1">
+                              <a
+                                href={`https://jirasw.nvidia.com/browse/${c.key}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#76B900] font-medium hover:underline whitespace-nowrap"
+                              >
+                                {c.key}
+                              </a>
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Hide ${c.key} from this view? (This won't change anything in Jira)`)) {
+                                    dismiss(c.key)
+                                  }
+                                }}
+                                className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity"
+                                title={`Hide ${c.key}`}
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
                           </td>
                           <td className="py-1.5 pr-3 text-gray-700 truncate max-w-[250px]">{c.summary}</td>
                           <td className="py-1.5 pr-3 text-xs text-amber-600 font-medium">{c.field}</td>
@@ -253,17 +282,17 @@ export default function ChangeLogPage() {
           )}
 
           {/* Link Changes */}
-          {changes.filter(c => c.field === 'Link' || c.field === 'RemoteIssueLink').length > 0 && (
+          {changes.filter(c => (c.field === 'Link' || c.field === 'RemoteIssueLink') && !dismissed.includes(c.key)).length > 0 && (
             <div className="bg-blue-50 rounded-xl border border-blue-200 p-5">
               <h2 className="text-sm font-bold text-blue-700 uppercase tracking-wide mb-3 flex items-center gap-2">
-                Link Changes ({changes.filter(c => c.field === 'Link' || c.field === 'RemoteIssueLink').length})
+                Link Changes ({changes.filter(c => (c.field === 'Link' || c.field === 'RemoteIssueLink') && !dismissed.includes(c.key)).length})
               </h2>
               <div className="space-y-2">
                 {changes
-                  .filter(c => c.field === 'Link' || c.field === 'RemoteIssueLink')
+                  .filter(c => (c.field === 'Link' || c.field === 'RemoteIssueLink') && !dismissed.includes(c.key))
                   .slice(0, 20)
                   .map((c, i) => (
-                    <div key={`${c.key}-link-${i}`} className="flex items-center gap-2 text-sm border-b border-blue-100 last:border-0 py-1.5">
+                    <div key={`${c.key}-link-${i}`} className="flex items-center gap-2 text-sm border-b border-blue-100 last:border-0 py-1.5 group">
                       <a
                         href={`https://jirasw.nvidia.com/browse/${c.key}`}
                         target="_blank"
@@ -275,6 +304,17 @@ export default function ChangeLogPage() {
                       <span className="text-gray-500 text-xs">
                         {c.to ? `+ ${c.to}` : c.from ? `- ${c.from}` : 'link changed'}
                       </span>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`Hide ${c.key} from this view? (This won't change anything in Jira)`)) {
+                            dismiss(c.key)
+                          }
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity ml-auto"
+                        title={`Hide ${c.key}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
               </div>
@@ -282,12 +322,14 @@ export default function ChangeLogPage() {
           )}
 
           {/* No changes */}
-          {changes.length === 0 && newItems.length === 0 && (
+          {changes.filter(c => !dismissed.includes(c.key)).length === 0 && newItems.filter(i => !dismissed.includes(i.key)).length === 0 && (
             <div className="text-center py-12 text-gray-400">
               <History className="w-8 h-8 mx-auto mb-2 opacity-50" />
               <p>No changes detected in the last {days} day{days > 1 ? 's' : ''}.</p>
             </div>
           )}
+
+          <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
         </div>
       )}
     </div>

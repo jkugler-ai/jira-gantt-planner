@@ -6,6 +6,13 @@ const path = require('path');
 const DATA_DIR = path.join(__dirname, '../../../data');
 const ALLOWED_KEYS = ['nspect-entries', 'saved-queries', 'saved-views'];
 
+// Dismissed keys are dynamic: dismissed-{pagename}
+function isAllowedKey(key) {
+  if (ALLOWED_KEYS.includes(key)) return true;
+  if (key.startsWith('dismissed-')) return true;
+  return false;
+}
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -19,8 +26,8 @@ function getFilePath(key) {
 router.get('/:key', (req, res) => {
   const { key } = req.params;
   
-  if (!ALLOWED_KEYS.includes(key)) {
-    return res.status(400).json({ error: `Invalid key. Allowed: ${ALLOWED_KEYS.join(', ')}` });
+  if (!isAllowedKey(key)) {
+    return res.status(400).json({ error: `Invalid key. Allowed: ${ALLOWED_KEYS.join(', ')} or dismissed-*` });
   }
 
   const filePath = getFilePath(key);
@@ -43,8 +50,8 @@ router.get('/:key', (req, res) => {
 router.put('/:key', (req, res) => {
   const { key } = req.params;
   
-  if (!ALLOWED_KEYS.includes(key)) {
-    return res.status(400).json({ error: `Invalid key. Allowed: ${ALLOWED_KEYS.join(', ')}` });
+  if (!isAllowedKey(key)) {
+    return res.status(400).json({ error: `Invalid key. Allowed: ${ALLOWED_KEYS.join(', ')} or dismissed-*` });
   }
 
   try {

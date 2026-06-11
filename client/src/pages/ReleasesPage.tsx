@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Rocket, ChevronDown, ChevronRight, RefreshCw, Shield, FileText, TestTube, AlertTriangle, Table, Layers } from 'lucide-react'
+import { Rocket, ChevronDown, ChevronRight, RefreshCw, Shield, FileText, TestTube, AlertTriangle, Table, Layers, X } from 'lucide-react'
 import { getDefaultQuery } from '../lib/savedQueries'
 import { useSavedQueries } from '../lib/savedQueries'
 import JqlDataPage from '../components/JqlDataPage'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissedPanel } from '../components/DismissControls'
 
 interface JiraIssue {
   key: string
@@ -38,7 +40,7 @@ interface ReleaseGroup {
   otherTickets: JiraIssue[]
 }
 
-const DEFAULT_JQL = 'project = OMPE AND issuetype = Release AND status != Done ORDER BY duedate ASC'
+const DEFAULT_JQL = 'project = OMPE AND issuetype = Release AND status != Done AND created >= -60d ORDER BY duedate ASC'
 
 export default function ReleasesPage() {
   const [releases, setReleases] = useState<ReleaseGroup[]>([])
@@ -48,7 +50,8 @@ export default function ReleasesPage() {
   const [expandedPLC, setExpandedPLC] = useState<Set<string>>(new Set())
   const [jql, setJql] = useState(() => getDefaultQuery('releases', DEFAULT_JQL))
   const { queries } = useSavedQueries('releases')
-  const [viewMode, setViewMode] = useState<'grouped' | 'table'>('grouped')
+  const [viewMode, setViewMode] = useState<'grouped' | 'table'>('table')
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed('releases')
 
   const fetchReleases = useCallback(async () => {
     setLoading(true)
@@ -123,8 +126,8 @@ export default function ReleasesPage() {
       )
 
       setReleases(releaseGroups)
-      // Auto-expand all releases
-      setExpandedReleases(new Set(releaseGroups.map(r => r.release.key)))
+      // Start with all releases collapsed by default
+      setExpandedReleases(new Set())
     } catch (e: any) {
       setError(e.message || 'Unknown error')
     }
@@ -177,6 +180,17 @@ export default function ReleasesPage() {
           <Table className="w-4 h-4" />
           Table View
         </button>
+        <div className="ml-auto">
+          <button
+            onClick={fetchReleases}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition disabled:opacity-50"
+            title="Refresh data from Jira"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            🔄
+          </button>
+        </div>
       </div>
 
       {viewMode === 'table' ? (
@@ -185,6 +199,7 @@ export default function ReleasesPage() {
           title=""
           defaultJql={DEFAULT_JQL}
           extraColumns={['statusUpdate', 'fixVersion', 'staleness']}
+          showFixVersionSummary={true}
         />
       ) : (
       <>
@@ -235,11 +250,11 @@ export default function ReleasesPage() {
       )}
 
       <div className="space-y-4">
-        {releases.map(rg => (
+        {releases.filter(rg => !dismissed.includes(rg.release.key)).map(rg => (
           <div key={rg.release.key} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
             {/* Release Header */}
             <div
-              className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition"
+              className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition group"
               onClick={() => toggleRelease(rg.release.key)}
             >
               {expandedReleases.has(rg.release.key) ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
@@ -247,8 +262,31 @@ export default function ReleasesPage() {
               <a href={`https://jirasw.nvidia.com/browse/${rg.release.key}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] font-medium hover:underline text-sm" onClick={e => e.stopPropagation()}>
                 {rg.release.key}
               </a>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (window.confirm(`Hide ${rg.release.key} from this view? (This won't change anything in Jira)`)) {
+                    dismiss(rg.release.key)
+                  }
+                }}
+                className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity"
+                title={`Hide ${rg.release.key}`}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
               <span className="font-semibold text-gray-900">{rg.release.summary}</span>
               <StatusBadge status={rg.release.status} category={rg.release.statusCategory} />
+              {/* Open/total summary when collapsed */}
+              {!expandedReleases.has(rg.release.key) && (() => {
+                const allItems = [...rg.plcGroups.map(p => p.parent), ...rg.qaTickets, ...rg.docsTickets, ...rg.otherTickets]
+                const openCount = allItems.filter(i => i.statusCategory !== 'done' && i.status !== 'Closed' && i.status !== 'Done').length
+                const totalCount = allItems.length
+                return totalCount > 0 ? (
+                  <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                    {openCount} of {totalCount} open
+                  </span>
+                ) : null
+              })()}
               {rg.release.dueDate && <span className="text-xs text-gray-500 ml-auto">Due: {rg.release.dueDate}</span>}
             </div>
 
@@ -371,6 +409,7 @@ export default function ReleasesPage() {
           </div>
         ))}
       </div>
+      <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
       </>
       )}
     </div>

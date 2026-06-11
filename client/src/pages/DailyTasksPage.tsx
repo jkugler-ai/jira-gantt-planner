@@ -18,9 +18,12 @@ import {
   Play,
   ArrowRight,
   RotateCcw,
-  Star
+  Star,
+  X
 } from 'lucide-react'
 import { useSavedQueries, getDefaultQuery } from '../lib/savedQueries'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissedPanel } from '../components/DismissControls'
 
 interface JiraTask {
   key: string
@@ -149,6 +152,7 @@ export default function DailyTasksPage() {
   const [jiraLoading, setJiraLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed('daily-tasks')
   const [expandedSections, setExpandedSections] = useState({
     overnight: true,
     jira: false,
@@ -293,6 +297,8 @@ export default function DailyTasksPage() {
   // Filtered and sorted Jira tasks
   const filteredJiraTasks = useMemo(() => {
     let tasks = [...data.jiraTasks]
+    // Filter out dismissed
+    tasks = tasks.filter(t => !dismissed.includes(t.key))
     if (filterStatus) tasks = tasks.filter(t => t.status === filterStatus)
     if (filterPriority) tasks = tasks.filter(t => t.priority === filterPriority)
     if (filterDevTeam) tasks = tasks.filter(t => t.devTeam === filterDevTeam)
@@ -328,7 +334,7 @@ export default function DailyTasksPage() {
       return sortDir === 'desc' ? -cmp : cmp
     })
     return tasks
-  }, [data.jiraTasks, filterStatus, filterPriority, filterDevTeam, filterAssignee, sortField, sortDir])
+  }, [data.jiraTasks, filterStatus, filterPriority, filterDevTeam, filterAssignee, sortField, sortDir, dismissed])
 
   // Update helpers
   const updateJiraTask = (key: string, updates: Partial<JiraTask>) => {
@@ -613,6 +619,11 @@ export default function DailyTasksPage() {
                               <div className="flex items-center gap-1">
                                 <button onClick={() => openTransitions(task.key)} className="text-gray-300 hover:text-[#76B900] transition" title="Change status"><Play className="w-3.5 h-3.5" /></button>
                                 <button onClick={() => toggleNotes(task.key)} className="text-gray-300 hover:text-blue-500 transition" title="Notes"><MessageSquare className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => {
+                                  if (window.confirm(`Hide ${task.key} from this view? (This won't change anything in Jira)`)) {
+                                    dismiss(task.key)
+                                  }
+                                }} className="text-gray-300 hover:text-red-500 transition" title="Hide from view"><X className="w-3.5 h-3.5" /></button>
                                 <button onClick={() => removeJiraTask(task.key)} className="text-gray-300 hover:text-red-400 transition" title="Remove from today"><Trash2 className="w-3.5 h-3.5" /></button>
                               </div>
                               {transitionMenuKey === task.key && (
@@ -644,6 +655,7 @@ export default function DailyTasksPage() {
                 </table>
               </div>
             )}
+            <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
           </Section>
 
           {/* Follow-ups & Action Items */}

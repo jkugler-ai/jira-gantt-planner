@@ -9,9 +9,11 @@ import ReactFlow, {
 } from 'reactflow'
 import type { Node, Edge } from 'reactflow'
 import 'reactflow/dist/style.css'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissedPanel } from '../components/DismissControls'
 
 const statusColors: Record<string, string> = {
   done: '#10b981',
@@ -24,15 +26,19 @@ export default function DependencyGraphPage() {
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
   const [selectedNode, setSelectedNode] = useState<FilteredIssue | null>(null)
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed('dependencies')
+
+  // Filter out dismissed items
+  const filteredDataset = activeDataset.filter(i => !dismissed.includes(i.key))
 
   useEffect(() => {
-    if (activeDataset.length > 0) {
-      buildGraph(activeDataset)
+    if (filteredDataset.length > 0) {
+      buildGraph(filteredDataset)
     } else {
       setNodes([])
       setEdges([])
     }
-  }, [activeDataset])
+  }, [filteredDataset])
 
   function buildGraph(data: FilteredIssue[]) {
     const keySet = new Set(data.map(i => i.key))
@@ -97,9 +103,9 @@ export default function DependencyGraphPage() {
   }
 
   const onNodeClick = useCallback((_: any, node: Node) => {
-    const item = activeDataset.find(i => i.key === node.id)
+    const item = filteredDataset.find(i => i.key === node.id)
     setSelectedNode(item || null)
-  }, [activeDataset])
+  }, [filteredDataset])
 
   if (activeDataset.length === 0) {
     return (
@@ -125,9 +131,17 @@ export default function DependencyGraphPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dependency Graph</h1>
           <p className="text-gray-500 text-sm mt-1">
-            Showing {activeDataset.length} stories • Click nodes for details
+            Showing {filteredDataset.length} stories • Click nodes for details
           </p>
         </div>
+        <button
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition"
+          title="Refresh data from Jira (reload page)"
+        >
+          <RefreshCw className="w-4 h-4" />
+          🔄
+        </button>
       </div>
 
       <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm relative" style={{ minHeight: 500 }}>
@@ -144,7 +158,7 @@ export default function DependencyGraphPage() {
           <Controls />
           <MiniMap
             nodeColor={(n) => {
-              const item = activeDataset.find(i => i.key === n.id)
+              const item = filteredDataset.find(i => i.key === n.id)
               return statusColors[item?.statusCategory || ''] || '#76B900'
             }}
             maskColor="rgba(255,255,255,0.8)"
@@ -175,6 +189,17 @@ export default function DependencyGraphPage() {
               <div><span className="font-medium">Dev Team:</span> {selectedNode.devTeam || '—'}</div>
               <div><span className="font-medium">Links:</span> {selectedNode.links.length} connections</div>
             </div>
+            <button
+              onClick={() => {
+                if (window.confirm(`Hide ${selectedNode.key} from this view? (This won't change anything in Jira)`)) {
+                  dismiss(selectedNode.key)
+                  setSelectedNode(null)
+                }
+              }}
+              className="mt-3 text-xs text-red-500 hover:text-red-700 hover:underline"
+            >
+              Hide from view
+            </button>
           </div>
         )}
       </div>
@@ -194,6 +219,7 @@ export default function DependencyGraphPage() {
           <span className="text-gray-400">- - →</span> Blocks (animated)
         </div>
       </div>
+      <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
     </div>
   )
 }
