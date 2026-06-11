@@ -295,12 +295,15 @@ export default function NSpectPage() {
     } catch {}
   }, [])
 
-  const save = (updated: NSpectEntry[], pushUndo = true) => {
-    if (pushUndo && entries.length > 0) {
-      setUndoStack(prev => [...prev.slice(-19), entries])
-    }
-    setEntries(updated)
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  const save = (updatedOrFn: NSpectEntry[] | ((prev: NSpectEntry[]) => NSpectEntry[]), pushUndo = true) => {
+    setEntries(prev => {
+      const updated = typeof updatedOrFn === 'function' ? updatedOrFn(prev) : updatedOrFn
+      if (pushUndo && prev.length > 0) {
+        setUndoStack(s => [...s.slice(-19), prev])
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      return updated
+    })
     setSaveFlash(true)
     setTimeout(() => setSaveFlash(false), 1500)
   }
@@ -559,7 +562,7 @@ export default function NSpectPage() {
       if (!res.ok) return
       const data = await res.json()
       const today = todayStr()
-      save(entries.map(e => {
+      save(prev => prev.map(e => {
         if (e.id !== entryId) return e
         return {
           ...e,
@@ -599,7 +602,7 @@ export default function NSpectPage() {
   }
 
   const updateEntry = (id: string, field: keyof NSpectEntry, value: string) => {
-    save(entries.map(e => e.id === id ? { ...e, [field]: value, lastUpdated: todayStr() } : e))
+    save(prev => prev.map(e => e.id === id ? { ...e, [field]: value, lastUpdated: todayStr() } : e))
   }
 
   const deleteEntry = (id: string) => {
@@ -735,7 +738,9 @@ export default function NSpectPage() {
               {filtered.map(entry => (
                 <tr key={entry.id} className={`border-b border-gray-100 hover:bg-gray-50 transition ${entry.locked ? 'bg-amber-50/50' : ''}`}>
                   <td className="px-3 py-3 align-top" style={{ wordBreak: 'break-word' }}>
-                    <NSpectIdCell entry={entry} onSave={(id, fields) => { updateEntry(id, 'nspectId', fields.nspectId); updateEntry(id, 'nspectLink', fields.nspectLink) }} />
+                    <NSpectIdCell entry={entry} onSave={(id, fields) => {
+                      save(prev => prev.map(e => e.id === id ? { ...e, nspectId: fields.nspectId, nspectLink: fields.nspectLink, lastUpdated: todayStr() } : e))
+                    }} />
                   </td>
                   <td className="px-3 py-3 align-top min-w-[200px] max-w-[300px]" style={{ wordBreak: 'break-word', whiteSpace: 'normal' }}>
                     <ProductNameCell value={entry.productName} onChange={(val) => updateEntry(entry.id, 'productName', val)} />
@@ -812,7 +817,7 @@ export default function NSpectPage() {
           {filtered.length} entr{filtered.length !== 1 ? 'ies' : 'y'}
           {entries.filter(e => e.locked).length > 0 && <span className="ml-2">• {entries.filter(e => e.locked).length} locked</span>}
         </span>
-        <span>Auto-saves to browser • {undoStack.length} undo step{undoStack.length !== 1 ? 's' : ''} available</span>
+        <span>Auto-saves to browser • {undoStack.length} undo step{undoStack.length !== 1 ? 's' : ''} available • v3</span>
       </div>
     </div>
   )

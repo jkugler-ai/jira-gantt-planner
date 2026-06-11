@@ -38,8 +38,16 @@ app.use('/api/daily-tasks', dailyTasksRoutes);
 
 // Serve static frontend in production
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../client/dist')));
+  app.use(express.static(path.join(__dirname, '../../client/dist'), {
+    etag: false,
+    setHeaders: (res, filePath) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }));
   app.get('*', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
   });
 }
