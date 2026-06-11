@@ -49,7 +49,9 @@ export default function ReleasesPage() {
   const [expandedReleases, setExpandedReleases] = useState<Set<string>>(new Set())
   const [expandedPLC, setExpandedPLC] = useState<Set<string>>(new Set())
   const [jql, setJql] = useState(() => getDefaultQuery('releases', DEFAULT_JQL))
-  const { queries } = useSavedQueries('releases')
+  const { queries, save: saveQuery, remove: removeQuery } = useSavedQueries('releases')
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [saveQueryName, setSaveQueryName] = useState('')
   const [viewMode, setViewMode] = useState<'grouped' | 'table'>('table')
   const { dismissed, dismiss, restore, restoreAll } = useDismissed('releases')
 
@@ -195,7 +197,7 @@ export default function ReleasesPage() {
 
       {viewMode === 'table' ? (
         <JqlDataPage
-          pageId="releases-table"
+          pageId="releases"
           title=""
           defaultJql={DEFAULT_JQL}
           extraColumns={['statusUpdate', 'fixVersion', 'staleness']}
@@ -217,15 +219,43 @@ export default function ReleasesPage() {
         <button onClick={fetchReleases} disabled={loading} className="px-4 py-2 bg-[#76B900] text-white rounded-lg text-sm font-medium hover:bg-[#5a8f00] disabled:opacity-50 transition">
           {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : 'Run'}
         </button>
+        <button onClick={() => setShowSaveDialog(true)} className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200 transition" title="Save query">
+          💾
+        </button>
       </div>
+
+      {/* Save Query Dialog */}
+      {showSaveDialog && (
+        <div className="mb-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={saveQueryName}
+              onChange={e => setSaveQueryName(e.target.value)}
+              placeholder="Query name..."
+              className="flex-1 text-sm border border-gray-200 rounded px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#76B900]/30"
+              autoFocus
+              onKeyDown={e => { if (e.key === 'Enter' && saveQueryName.trim()) { saveQuery({ name: saveQueryName.trim(), jql, isDefault: false }); setShowSaveDialog(false); setSaveQueryName('') } if (e.key === 'Escape') setShowSaveDialog(false) }}
+            />
+            <button onClick={() => { if (saveQueryName.trim()) { saveQuery({ name: saveQueryName.trim(), jql, isDefault: false }); setShowSaveDialog(false); setSaveQueryName('') } }} className="px-3 py-1.5 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition">Save</button>
+            <button onClick={() => { if (saveQueryName.trim()) { saveQuery({ name: saveQueryName.trim(), jql, isDefault: true }); setShowSaveDialog(false); setSaveQueryName('') } }} className="px-3 py-1.5 bg-[#76B900] text-white rounded text-sm hover:bg-[#5a8f00] transition">Save as Default</button>
+            <button onClick={() => setShowSaveDialog(false)} className="px-2 py-1.5 text-gray-400 hover:text-gray-600 text-sm">✕</button>
+          </div>
+        </div>
+      )}
 
       {/* Saved Queries */}
       {queries.length > 0 && (
         <div className="mb-4 flex items-center gap-2 flex-wrap">
           {queries.map(q => (
-            <button key={q.name} onClick={() => { setJql(q.jql); }} className={`text-xs px-2 py-1 rounded border transition ${q.isDefault ? 'bg-[#76B900]/10 border-[#76B900] text-[#76B900]' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
-              {q.name}
-            </button>
+            <span key={q.name} className="inline-flex items-center gap-1">
+              <button onClick={() => { setJql(q.jql); }} className={`text-xs px-2 py-1 rounded-l border transition ${q.isDefault ? 'bg-[#76B900]/10 border-[#76B900] text-[#76B900]' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'}`}>
+                {q.isDefault && '⭐ '}{q.name}
+              </button>
+              <button onClick={() => removeQuery(q.name)} className={`text-xs px-1.5 py-1 rounded-r border-l-0 border transition text-gray-400 hover:text-red-500 hover:bg-red-50 ${q.isDefault ? 'border-[#76B900]' : 'border-gray-200'}`} title="Delete query">
+                ✕
+              </button>
+            </span>
           ))}
         </div>
       )}
