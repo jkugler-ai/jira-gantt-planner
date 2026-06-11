@@ -1,0 +1,2473 @@
+[
+  {
+    "date": "Dec 25",
+    "title": "Christmas Day (All Provinces)",
+    "type": "Holiday",
+    "description": "All Provinces",
+    "location": "Canada"
+  },
+  {
+    "date": "Jul 5",
+    "title": "Constitution Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Armenia"
+  },
+  {
+    "date": "Sep 21",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Armenia"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Armenia"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Armenia"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Armenia"
+  },
+  {
+    "date": "Oct 6 -  7",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "Beijing; Shenzhen; Guangzhou",
+    "location": "China"
+  },
+  {
+    "date": "Jun 18",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Sep 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Jun 22",
+    "title": "NVIDIA Free Day Substitute (June 19)",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Sep 28",
+    "title": "NVIDIA Free Day Substitute",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Oct 1 -  2",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Oct 5",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Eve",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Nov 16",
+    "title": "Revolution Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Jun 19",
+    "title": "Dragon Boat Festival + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Sep 25",
+    "title": "Mid-Autumn Festival + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "All Of China",
+    "location": "China"
+  },
+  {
+    "date": "Sep 30",
+    "title": "Truth and Reconciliation Day (BC, PEI, MB)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Sep 16",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Mexico"
+  },
+  {
+    "date": "Sep 7",
+    "title": "Labour Day (All Provinces)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Nov 11",
+    "title": "Remembrance Day (BC, AB, NB, PEI, NL, NS)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Oct 12",
+    "title": "Thanksgiving Day (All Provinces)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Vietnam"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Boxing Day Substitute (Dec 26, ON)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Jul 1",
+    "title": "Canada Day (All Provinces)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25, All Provinces)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Aug 3",
+    "title": "Civic Holiday (AB,BC,ON,NB)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Jun 24",
+    "title": "Jean Baptiste Day (QC)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Canada"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Nov 26",
+    "title": "Thanksgiving Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Nov 11",
+    "title": "Veterans Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Sep 2 -  3",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Vietnam"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Vietnam"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Vietnam"
+  },
+  {
+    "date": "Nov 27",
+    "title": "Day After Thanksgiving",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Jul 3",
+    "title": "Independence Day Observed",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Jun 17",
+    "title": "Juneteenth Observed (Jun 19)",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Sep 7",
+    "title": "Labor Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Kingdom"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Kingdom"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Kingdom"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Kingdom"
+  },
+  {
+    "date": "Aug 31",
+    "title": "Summer Bank Holiday",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Kingdom"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Observed (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "United States"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Arab Emirates"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Arab Emirates"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Arab Emirates"
+  },
+  {
+    "date": "Dec 2 -  3",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Arab Emirates"
+  },
+  {
+    "date": "Dec 28",
+    "title": "Boxing Day Substitute (Dec 26)",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Kingdom"
+  },
+  {
+    "date": "Jun 29",
+    "title": "Constitution Day Substitute",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Jul 15",
+    "title": "Day of Ukrainian Statehood",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Oct 1",
+    "title": "Defenders&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Aug 24",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Aug 12",
+    "title": "Mother&#39;s Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Eve",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Ukraine"
+  },
+  {
+    "date": "Oct 26",
+    "title": "Taiwan Retrocession Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Sep 28",
+    "title": "Teachers Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Jul 29",
+    "title": "Asarnha Bucha Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Dec 7",
+    "title": "Father&#39;s and National Day Substitute (Dec 5)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Oct 13",
+    "title": "H.M. King Memorial Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Jul 28",
+    "title": "H.M. King&#39;s Birthday",
+    "type": "Holiday",
+    "description": "",
+    "location": "Thailand"
+  },
+  {
+    "date": "Jun 18",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Sep 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Dec 23",
+    "title": "NVIDIA Free Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Jun 17",
+    "title": "NVIDIA Free Day Substitute (June 19)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Sep 23",
+    "title": "NVIDIA Free Day Substitute (Sept 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Oct 9",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Sep 22",
+    "title": "St Mauritius",
+    "type": "Holiday",
+    "description": "Appenzel Innerhoden only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Jun 29",
+    "title": "Sts Peters and Paul",
+    "type": "Holiday",
+    "description": "Ticino only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Dec 25",
+    "title": "Constitution Day + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Jun 19",
+    "title": "Dragon Boat Festival + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Sep 25",
+    "title": "Mid-Autumn Festival + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Dec 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Taiwan"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Aug 1",
+    "title": "National Holiday",
+    "type": "Holiday",
+    "description": "",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Dec 31",
+    "title": "Republic Restoration",
+    "type": "Holiday",
+    "description": "Geneva and Glarus only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Sep 25",
+    "title": "Saint Nicholas of Fl&#252;e Day",
+    "type": "Holiday",
+    "description": "Obwalden only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Sep 14",
+    "title": "Shooting Festival",
+    "type": "Holiday",
+    "description": "Z&#252;rich only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "Glarus only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Sep 21",
+    "title": "Federal Fast Monday",
+    "type": "Holiday",
+    "description": "Vaud only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Sep 10",
+    "title": "Geneva Pray Day",
+    "type": "Holiday",
+    "description": "Geneva only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Dec 8",
+    "title": "Immaculate Conception",
+    "type": "Holiday",
+    "description": "(TI, LU, AG, ZG, SZ, NW, OW, UR, FR, VS, AI only)",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Jun 23",
+    "title": "Jura Independence Day",
+    "type": "Holiday",
+    "description": "Jura only",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Eve",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "(TI, LU, AG, ZG, SZ, NW, OW,  JU, UR, SO, FR, VS, AI only)",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption Day",
+    "type": "Holiday",
+    "description": "(TI, LU, AG, ZG, SZ, NW, OW, JU, UR, SO, FR, VS, NE, AI, only)",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Switzerland"
+  },
+  {
+    "date": "Sep 15",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "Cantabria only",
+    "location": "Spain"
+  },
+  {
+    "date": "Sep 2",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "Ceuta only",
+    "location": "Spain"
+  },
+  {
+    "date": "Sep 8",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "Extremadura only",
+    "location": "Spain"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Jun 17",
+    "title": "Midsummer Eve Substitute (Jun 20)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Dec 26",
+    "title": "Regional Holiday Substitute (Dec 26)",
+    "type": "Holiday",
+    "description": "Catalonia and Baleareas only",
+    "location": "Spain"
+  },
+  {
+    "date": "Nov 2",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "In Andalusia, Aragon, Baleares, Canarias, Castilla y Leon, Castilla La Mancha, C. Madrid, Extremadura and Navarra",
+    "location": "Spain"
+  },
+  {
+    "date": "Dec 7",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "In Andalusia, Aragon, Castilla y Leon, Cantabria, C. Madrid, Murcia, Extremadura y La Rioja",
+    "location": "Spain"
+  },
+  {
+    "date": "Jul 25",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "Galicia and Pais Vasco only",
+    "location": "Spain"
+  },
+  {
+    "date": "Jul 28",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "Cantabria only",
+    "location": "Spain"
+  },
+  {
+    "date": "Aug 5",
+    "title": "Regional holiday",
+    "type": "Holiday",
+    "description": "Ceuta only",
+    "location": "Spain"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Dec 23",
+    "title": "National Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Oct 12",
+    "title": "National Holiday in Spain",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Jun 13",
+    "title": "Regional Holiday",
+    "type": "Holiday",
+    "description": "Ceuta only",
+    "location": "Spain"
+  },
+  {
+    "date": "Jun 24",
+    "title": "Regional Holiday",
+    "type": "Holiday",
+    "description": "Catalonia, C. Valenciana and Galicia only",
+    "location": "Spain"
+  },
+  {
+    "date": "Aug 10",
+    "title": "National Day Substitute (Aug 9)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Singapore"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption of the Virgin",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Oct 9",
+    "title": "Holiday Valencia Community Region",
+    "type": "Holiday",
+    "description": "C. Valenciana only",
+    "location": "Spain"
+  },
+  {
+    "date": "Dec 8",
+    "title": "Immaculate Virgin Mary Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Oct 13",
+    "title": "Local Holiday",
+    "type": "Holiday",
+    "description": "Los Alcazares city only",
+    "location": "Spain"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Spain"
+  },
+  {
+    "date": "Sep 23",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Singapore"
+  },
+  {
+    "date": "Nov 9",
+    "title": "Deepavali Substitute (Nov 8)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Singapore"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Singapore"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Singapore"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Singapore"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Nov 30",
+    "title": "Saint Andrew",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Saint Mary&#39;s Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Dec 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Jun 18",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Sep 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Dec 1",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Romania"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day Substitute (Nov 1)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Aug 14",
+    "title": "Assumption Day Substitute (Aug 15)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Dec 21",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Nov 11",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Dec 27",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Jun 18",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Jun 21",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Sep 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Sep 27",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Dec 23",
+    "title": "2nd Christmas Day Substitute (Dec 26)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Poland"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Aug 31",
+    "title": "Summer Bank Holiday",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Aug 25",
+    "title": "Almawlid Alnabawi",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Jun 16",
+    "title": "Hijri New Year",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Nov 15",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Dec 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Palestinian Authority"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Jul 13",
+    "title": "Battle of the Boyne/Orangemen&#39;s Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Dec 28",
+    "title": "Boxing Day Substitute",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Northern Ireland"
+  },
+  {
+    "date": "Dec 28",
+    "title": "Boxing Day Substitute (Dec 26)",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Oct 26",
+    "title": "Labour Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Jul 10",
+    "title": "Matariki Substitute Holiday",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "New Zealand"
+  },
+  {
+    "date": "Oct 5",
+    "title": "Substitute Holiday (for National Foundation Day on Holiday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Dec 23",
+    "title": "1st Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Netherlands"
+  },
+  {
+    "date": "Dec 26",
+    "title": "2nd Christmas Day Substitute (Dec 26)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Netherlands"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Netherlands"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Netherlands"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Netherlands"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Liberation Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Oct 3",
+    "title": "National Foundation Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Aug 17",
+    "title": "Substitute Holiday (for Liberation Day&#39;s on Holiday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Oct 12",
+    "title": "Sports Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Sep 26",
+    "title": "Chuseok",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Sep 22",
+    "title": "Chuseok Substitute (Sept 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Sep 23",
+    "title": "Chuseok Substitute (Sept 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Oct 9",
+    "title": "Korean Proclamation Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  },
+  {
+    "date": "Aug 11",
+    "title": "Mountain Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Sep 22",
+    "title": "National Holiday",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Sep 21",
+    "title": "Respect Aged Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Dec 26",
+    "title": "St. Stephen&#39;s Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Sep 23",
+    "title": "Autumnal Equinox Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Nov 3",
+    "title": "Culture Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Dec 28 -  31",
+    "title": "Japan office closure",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Nov 23",
+    "title": "Labour Thanksgiving Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Jul 20",
+    "title": "Marine Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Japan"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Dec 8",
+    "title": "Immaculate Conception",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Aug 16",
+    "title": "National holiday for Italian NCLA",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Sep 12",
+    "title": "Rosh Hashanah (Saturday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 11",
+    "title": "Rosh Hashanah Eve (Friday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 21",
+    "title": "Yom Kippur (Holiday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 20",
+    "title": "Yom Kippur Eve (half work-day )",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Dec 27",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Jun 18",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Jun 21",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 27",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 13",
+    "title": "Rosh Hashanah (Holiday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Sep 26",
+    "title": "1st Sukkot (Saturday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Sep 25",
+    "title": "1st Sukkot Eve (Friday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Oct 3",
+    "title": "2nd Sukkot (Saturday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Oct 2",
+    "title": "2nd Sukkot Eve ( Friday)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Dec 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Israel"
+  },
+  {
+    "date": "Nov 9",
+    "title": "Diwali",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Oct 20",
+    "title": "Dussehra",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Oct 2",
+    "title": "Gandhi Jayanthi",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Sep 14",
+    "title": "Ganesh Chaturthi",
+    "type": "Holiday",
+    "description": "Bengaluru, Hyderabad and Pune only",
+    "location": "India"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Oct 23",
+    "title": "Republic Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Aug 20",
+    "title": "Saint Stephen&#39;s Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "India"
+  },
+  {
+    "date": "Sep 26",
+    "title": "The Day following the Chinese Mid-Autumn Festival",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Dec 26",
+    "title": "The First Weekday After Christmas Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Jun 22",
+    "title": "NVIDIA Free Day Substitute (June 19)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve (Rest holiday for weekend work)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hungary"
+  },
+  {
+    "date": "Jul 1",
+    "title": "HKSAR Establishment Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Dec 25",
+    "title": "Christmas Day + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Jun 18",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Oct 1",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Oct 19",
+    "title": "The Day following Chung Yeung Festival",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Dormition of the Mother of God",
+    "type": "Holiday",
+    "description": "",
+    "location": "Greece"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Sweden"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Greece"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Greece"
+  },
+  {
+    "date": "Oct 28",
+    "title": "National Holiday (Ohi Day)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Greece"
+  },
+  {
+    "date": "Dec 23",
+    "title": "NVIDIA Free Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Germany"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Germany"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Germany"
+  },
+  {
+    "date": "Oct 31",
+    "title": "Reformation Day",
+    "type": "Holiday",
+    "description": "Brandenburg; Bremen; Hamburg; Mecklenburg-Western Pomerania; Lower Saxony; Saxony; Saxony-Anhalt; Schleswig-Holstein; Thuringia",
+    "location": "Germany"
+  },
+  {
+    "date": "Dec 26",
+    "title": "2nd Christmas Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Greece"
+  },
+  {
+    "date": "Dec 28",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Greece"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "Munich; Stuttgart; Wuerselen",
+    "location": "Germany"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption Day",
+    "type": "Holiday",
+    "description": "Munich",
+    "location": "Germany"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Germany"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute  Half Day (Dec 24)",
+    "type": "Holiday",
+    "description": "If you want to take this day off, please book 0.5 day in Workday.",
+    "location": "Germany"
+  },
+  {
+    "date": "Oct 3",
+    "title": "Germany Unity Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Germany"
+  },
+  {
+    "date": "Nov 11",
+    "title": "Armistice Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Jul 14",
+    "title": "Bastille Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Dec 6",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Jun 17",
+    "title": "Midsummer Eve Substitute (Jun 20)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "France"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Denmark"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Denmark"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Denmark"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Eve",
+    "type": "Holiday",
+    "description": "",
+    "location": "Denmark"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Finland"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Jul 5",
+    "title": "Saints Cyril and Methodius",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Sep 28",
+    "title": "Statehood Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Denmark"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Denmark"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Nov 17",
+    "title": "Freedom and Democracy Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Oct 28",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Jul 6",
+    "title": "Jan Hus Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Czech Republic"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Eve",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Oct 12",
+    "title": "Our Lady Aparecida",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Nov 15",
+    "title": "Republic Proclamation Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Jul 9",
+    "title": "State Rebellion Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Nov 20",
+    "title": "Zumbi&#39;s National and Black Consciousness Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Nov 2",
+    "title": "All Souls&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Dec 22",
+    "title": "Christmas Eve Substitute (Dec 24)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Sep 7",
+    "title": "Independence Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Brazil"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption of Mary",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Jul 21",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Oct 26",
+    "title": "National Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Dec 26",
+    "title": "St Stephen&#39;s Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Nov 11",
+    "title": "Armistice Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Belgium"
+  },
+  {
+    "date": "Sep 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Australia"
+  },
+  {
+    "date": "Nov 1",
+    "title": "All Saints&#39; Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Aug 15",
+    "title": "Assumption Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Dec 8",
+    "title": "Immaculate Conception",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Austria"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Holiday",
+    "type": "Holiday",
+    "description": "",
+    "location": "Armenia"
+  },
+  {
+    "date": "Dec 28",
+    "title": "Boxing Day Substitute (Dec 26)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Australia"
+  },
+  {
+    "date": "Dec 23",
+    "title": "Christmas Day Substitute (Dec 25)",
+    "type": "Holiday",
+    "description": "",
+    "location": "Australia"
+  },
+  {
+    "date": "Oct 5",
+    "title": "Labour Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Australia"
+  },
+  {
+    "date": "Dec 24 -  25",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Australia"
+  },
+  {
+    "date": "Jun 18 -  19",
+    "title": "NVIDIA Free Days",
+    "type": "Holiday",
+    "description": "",
+    "location": "Australia"
+  },
+  {
+    "date": "Dec 31",
+    "title": "New Year&#39;s Eve (Half Day)",
+    "type": "Holiday",
+    "description": "If you want to take this day off, please book 0.5 day in Workday.",
+    "location": "Germany"
+  },
+  {
+    "date": "Aug 28",
+    "title": "Raksha Bandhan",
+    "type": "Holiday",
+    "description": "Gurugram Only",
+    "location": "India"
+  },
+  {
+    "date": "Jun 19",
+    "title": "Tuen Ng Festival + NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Dec 24",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Hong Kong"
+  },
+  {
+    "date": "Jun 21",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Sep 27",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Dec 27",
+    "title": "NVIDIA Free Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Saudi Arabia"
+  },
+  {
+    "date": "Oct 4",
+    "title": "Saint Francis of Assisi",
+    "type": "Holiday",
+    "description": "",
+    "location": "Italy"
+  },
+  {
+    "date": "Jun 15",
+    "title": "Islamic New Year",
+    "type": "Holiday",
+    "description": "",
+    "location": "United Arab Emirates"
+  },
+  {
+    "date": "Jul 17",
+    "title": "Constitution Day",
+    "type": "Holiday",
+    "description": "",
+    "location": "Korea"
+  }
+]
