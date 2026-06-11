@@ -202,6 +202,7 @@ export default function ReleasesPage() {
           defaultJql={DEFAULT_JQL}
           extraColumns={['statusUpdate', 'fixVersion', 'staleness']}
           showFixVersionSummary={true}
+          showStatusFilter={true}
         />
       ) : (
       <>
@@ -311,8 +312,9 @@ export default function ReleasesPage() {
                 const allItems = [...rg.plcGroups.map(p => p.parent), ...rg.qaTickets, ...rg.docsTickets, ...rg.otherTickets]
                 const openCount = allItems.filter(i => i.statusCategory !== 'done' && i.status !== 'Closed' && i.status !== 'Done').length
                 const totalCount = allItems.length
+                const colorClass = openCount === 0 ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
                 return totalCount > 0 ? (
-                  <span className="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${colorClass}`}>
                     {openCount} of {totalCount} open
                   </span>
                 ) : null

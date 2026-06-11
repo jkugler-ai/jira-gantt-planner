@@ -79,6 +79,14 @@ interface Transition {
   name: string
 }
 
+interface OvernightChange {
+  key: string
+  summary: string
+  changeType: 'status' | 'new' | 'removed'
+  oldValue?: string
+  newValue?: string
+}
+
 const PAGE_ID = 'daily-tasks'
 const DEFAULT_JQL = '(assignee = currentUser() OR cf[12712] = currentUser()) AND statusCategory != Done ORDER BY duedate ASC'
 
@@ -182,6 +190,10 @@ export default function DailyTasksPage() {
   const [transitions, setTransitions] = useState<Transition[]>([])
   const [transitionLoading, setTransitionLoading] = useState(false)
 
+  // Overnight changes summary
+  const [overnightChanges, setOvernightChanges] = useState<OvernightChange[]>([])
+  const [lastLoadHoursAgo, setLastLoadHoursAgo] = useState<number | null>(null)
+
   // Saved queries
   const { queries, save: saveQuery, remove: removeQuery } = useSavedQueries(PAGE_ID)
   const [showSaveDialog, setShowSaveDialog] = useState(false)
@@ -251,6 +263,48 @@ export default function DailyTasksPage() {
             completed: existing?.completed || false
           }
         })
+
+        // Overnight changes detection
+        const lastLoadTimestamp = localStorage.getItem('daily-tasks-last-load')
+        const lastSnapshot = localStorage.getItem('daily-tasks-last-snapshot')
+        if (lastLoadTimestamp && lastSnapshot) {
+          const hoursAgo = Math.round((Date.now() - parseInt(lastLoadTimestamp)) / (1000 * 60 * 60))
+          setLastLoadHoursAgo(hoursAgo)
+          try {
+            const prevTasks: Record<string, { status: string; updated: string | null }> = JSON.parse(lastSnapshot)
+            const changes: OvernightChange[] = []
+            for (const task of json.tasks) {
+              const prev = prevTasks[task.key]
+              if (!prev) {
+                changes.push({ key: task.key, summary: task.summary, changeType: 'new' })
+              } else if (prev.status !== task.status) {
+                changes.push({ key: task.key, summary: task.summary, changeType: 'status', oldValue: prev.status, newValue: task.status })
+              }
+            }
+            // Check for removed tickets
+            const currentKeys = new Set(json.tasks.map((t: JiraTask) => t.key))
+            for (const key of Object.keys(prevTasks)) {
+              if (!currentKeys.has(key)) {
+                changes.push({ key, summary: key, changeType: 'removed' })
+              }
+            }
+            setOvernightChanges(changes)
+          } catch {
+            setOvernightChanges([])
+          }
+        } else {
+          setOvernightChanges([])
+          setLastLoadHoursAgo(null)
+        }
+
+        // Save current snapshot for next comparison
+        const snapshot: Record<string, { status: string; updated: string | null }> = {}
+        for (const task of json.tasks) {
+          snapshot[task.key] = { status: task.status, updated: task.updated }
+        }
+        localStorage.setItem('daily-tasks-last-load', String(Date.now()))
+        localStorage.setItem('daily-tasks-last-snapshot', JSON.stringify(snapshot))
+
         setData(prev => ({ ...prev, jiraTasks: merged, jql }))
         setDirty(true)
       }
@@ -456,6 +510,45 @@ export default function DailyTasksPage() {
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2">
           <RotateCcw className="w-4 h-4 text-blue-500" />
           <span className="text-sm text-blue-700">Incomplete tasks carried over from <span className="font-medium">{data._carriedFrom}</span></span>
+        </div>
+      )}
+
+      {/* Overnight Changes Summary */}
+      {overnightChanges.length > 0 && lastLoadHoursAgo !== null && (
+        <div className="mb-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
+          <h3 className="text-sm font-bold text-purple-800 mb-2 flex items-center gap-2">
+            <Sun className="w-4 h-4 text-purple-500" />
+            Changes since your last visit ({lastLoadHoursAgo}h ago)
+          </h3>
+          <div className="space-y-1">
+            {overnightChanges.map(change => (
+              <div key={change.key} className="text-xs text-purple-700 flex items-center gap-2">
+                <a
+                  href={`https://jirasw.nvidia.com/browse/${change.key}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#76B900] font-medium hover:underline"
+                >
+                  {change.key}
+                </a>
+                {change.changeType === 'status' && (
+                  <span>status <span className="font-medium">{change.oldValue}</span> → <span className="font-medium">{change.newValue}</span></span>
+                )}
+                {change.changeType === 'new' && (
+                  <span className="text-green-700 font-medium">new ticket appeared</span>
+                )}
+                {change.changeType === 'removed' && (
+                  <span className="text-gray-500 font-medium">no longer in query results</span>
+                )}
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setOvernightChanges([])}
+            className="mt-2 text-[10px] text-purple-500 hover:text-purple-700 underline"
+          >
+            Dismiss
+          </button>
         </div>
       )}
 

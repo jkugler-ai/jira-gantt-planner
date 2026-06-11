@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
 import { ExternalLink, Filter, RefreshCw, Save, Star, Trash2, Search, ChevronUp, ChevronDown, Pencil, X, Check, Bookmark } from 'lucide-react'
 import MultiSelect from './MultiSelect'
@@ -438,7 +438,15 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
 
   // Apply sorting
   const sortedIssues = useMemo(() => {
-    if (!sortField) return filteredIssues
+    if (!sortField) {
+      // When showing fix version summary, group by fixVersion by default
+      if (showFixVersionSummary) {
+        const sorted = [...filteredIssues]
+        sorted.sort((a, b) => (a.fixVersion || 'zzz').localeCompare(b.fixVersion || 'zzz'))
+        return sorted
+      }
+      return filteredIssues
+    }
     const sorted = [...filteredIssues]
     sorted.sort((a, b) => {
       let cmp = 0
@@ -493,7 +501,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
       return sortDir === 'desc' ? -cmp : cmp
     })
     return sorted
-  }, [filteredIssues, sortField, sortDir])
+  }, [filteredIssues, sortField, sortDir, showFixVersionSummary])
 
   const colSpan = 8 + (showPriority ? 1 : 0) + (showFixVersion ? 1 : 0) + (showCreated ? 1 : 0) + (showNvbugs ? 1 : 0) + (showReporter ? 1 : 0) + (showStatusUpdate ? 1 : 0) + (showStaleness ? 1 : 0) - (hideStartDate ? 1 : 0) - (hideType ? 1 : 0)
 
@@ -737,6 +745,35 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
         <div className="bg-red-50 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">{error}</div>
       )}
 
+      {/* Fix Version Summary - Inline above table */}
+      {showFixVersionSummary && !loading && sortedIssues.length > 0 && (() => {
+        const versionMap: Record<string, { open: number; total: number }> = {}
+        for (const issue of sortedIssues) {
+          const fv = issue.fixVersion || 'No Fix Version'
+          if (!versionMap[fv]) versionMap[fv] = { open: 0, total: 0 }
+          versionMap[fv].total++
+          if (issue.statusCategory !== 'done' && issue.status !== 'Done' && issue.status !== 'Closed') {
+            versionMap[fv].open++
+          }
+        }
+        const entries = Object.entries(versionMap).sort((a, b) => a[0].localeCompare(b[0]))
+        return (
+          <div className="mb-4 bg-white rounded-xl border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-700 mb-2">Fix Version Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {entries.map(([version, { open, total }]) => (
+                <div key={version} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
+                  <span className="text-xs font-medium text-gray-700 truncate">{version}</span>
+                  <span className={`text-xs font-bold ml-auto ${open > 0 ? 'text-amber-600' : 'text-green-600'}`}>
+                    {open}/{total} open
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
@@ -789,7 +826,30 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                   </td>
                 </tr>
               ) : (
-                sortedIssues.map(issue => {
+                (() => {
+                  // When showFixVersionSummary, insert group header rows by fixVersion
+                  let lastFixVersion: string | null | undefined = undefined
+                  return sortedIssues.map(issue => {
+                  const currentFv = issue.fixVersion || 'No Fix Version'
+                  let groupHeader: React.ReactNode = null
+                  if (showFixVersionSummary && currentFv !== lastFixVersion) {
+                    lastFixVersion = currentFv
+                    const groupIssues = sortedIssues.filter(i => (i.fixVersion || 'No Fix Version') === currentFv)
+                    const openCount = groupIssues.filter(i => i.statusCategory !== 'done' && i.status !== 'Done' && i.status !== 'Closed').length
+                    const totalCount = groupIssues.length
+                    groupHeader = (
+                      <tr key={`group-${currentFv}`} className="bg-gray-100 border-b border-gray-200">
+                        <td colSpan={colSpan} className="px-4 py-2">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">{currentFv}</span>
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${openCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                              {openCount} open / {totalCount} total
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  }
                   // Highlight: no priority AND no fix version = needs triage
                   const needsTriage = highlightUntriaged && (!issue.priority || issue.priority === 'Medium') && !issue.fixVersion
                   // Flag: open longer than N months
@@ -799,7 +859,9 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     ? 'bg-orange-50 border-b border-orange-100 hover:bg-orange-100 transition'
                     : 'hover:bg-gray-50 border-b border-gray-100 transition'
                   return (
-                  <tr key={issue.key} className={`${rowClass} group`}>
+                  <React.Fragment key={issue.key}>
+                  {groupHeader}
+                  <tr className={`${rowClass} group`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         <a
@@ -869,8 +931,10 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                     {!hideStartDate && <td className="px-4 py-3 text-sm text-gray-500">{issue.startDate || '—'}</td>}
                     <td className="px-4 py-3 text-sm text-gray-500">{issue.dueDate || '—'}</td>
                   </tr>
+                  </React.Fragment>
                   )
                 })
+                })()
               )}
             </tbody>
           </table>
@@ -886,34 +950,6 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
         </div>
       )}
 
-      {/* Fix Version Summary */}
-      {showFixVersionSummary && !loading && sortedIssues.length > 0 && (() => {
-        const versionMap: Record<string, { open: number; total: number }> = {}
-        for (const issue of sortedIssues) {
-          const fv = issue.fixVersion || 'No Fix Version'
-          if (!versionMap[fv]) versionMap[fv] = { open: 0, total: 0 }
-          versionMap[fv].total++
-          if (issue.statusCategory !== 'done' && issue.status !== 'Done' && issue.status !== 'Closed') {
-            versionMap[fv].open++
-          }
-        }
-        const entries = Object.entries(versionMap).sort((a, b) => a[0].localeCompare(b[0]))
-        return (
-          <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-2">Fix Version Summary</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-              {entries.map(([version, { open, total }]) => (
-                <div key={version} className="flex items-center gap-2 px-3 py-2 bg-gray-50 rounded-lg">
-                  <span className="text-xs font-medium text-gray-700 truncate">{version}</span>
-                  <span className={`text-xs font-bold ml-auto ${open > 0 ? 'text-amber-600' : 'text-green-600'}`}>
-                    {open}/{total} open
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })()}
     </div>
   )
 }

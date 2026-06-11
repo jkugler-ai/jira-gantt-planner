@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { getDefaultQuery } from '../lib/savedQueries'
@@ -49,52 +49,62 @@ export default function DashboardPage() {
   const twoWeeksOut = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
 
   // Auto-load all default queries on mount
-  useEffect(() => {
-    async function loadAll() {
-      setLoading(true)
-      try {
-        const pages = Object.keys(PAGE_DEFAULTS)
-        await Promise.all(pages.map(async (pageId) => {
-          // Skip if already loaded
-          if (pageDatasets[pageId] && pageDatasets[pageId].length > 0) return
-          const jql = getDefaultQuery(pageId, PAGE_DEFAULTS[pageId])
-          const res = await fetch(`/api/jira/query?jql=${encodeURIComponent(jql)}&maxResults=200`, { credentials: 'include' })
-          if (res.ok) {
-            const data = await res.json()
-            const issues: FilteredIssue[] = (data.issues || []).map((issue: any) => ({
-              key: issue.key,
-              summary: issue.summary || issue.fields?.summary,
-              status: issue.status || issue.fields?.status?.name,
-              statusCategory: issue.statusCategory || issue.fields?.status?.statusCategory?.key,
-              type: issue.type || issue.fields?.issuetype?.name,
-              dueDate: issue.dueDate || issue.fields?.duedate,
-              startDate: issue.startDate || issue.fields?.customfield_10015,
-              assignee: issue.assignee || issue.fields?.assignee?.displayName,
-              priority: issue.priority || issue.fields?.priority?.name,
-              updated: issue.updated || null,
-            }))
-            setPageDataset(pageId, issues)
-          }
-        }))
-        // Also fetch follow-ups for the week
-        const res = await fetch('/api/daily-tasks/calendar/manual', { credentials: 'include' })
+  const loadAll = useCallback(async () => {
+    setLoading(true)
+    try {
+      const pages = Object.keys(PAGE_DEFAULTS)
+      await Promise.all(pages.map(async (pageId) => {
+        const jql = getDefaultQuery(pageId, PAGE_DEFAULTS[pageId])
+        const res = await fetch(`/api/jira/query?jql=${encodeURIComponent(jql)}&maxResults=200`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
-          setFollowUps(data.tasks || [])
+          const issues: FilteredIssue[] = (data.issues || []).map((issue: any) => ({
+            key: issue.key,
+            summary: issue.summary || issue.fields?.summary,
+            status: issue.status || issue.fields?.status?.name,
+            statusCategory: issue.statusCategory || issue.fields?.status?.statusCategory?.key,
+            type: issue.type || issue.fields?.issuetype?.name,
+            dueDate: issue.dueDate || issue.fields?.duedate,
+            startDate: issue.startDate || issue.fields?.customfield_10015,
+            assignee: issue.assignee || issue.fields?.assignee?.displayName,
+            priority: issue.priority || issue.fields?.priority?.name,
+            updated: issue.updated || null,
+          }))
+          setPageDataset(pageId, issues)
         }
-        // Fetch all active follow-ups for the action items section
-        const fuRes = await fetch('/api/daily-tasks/follow-ups/active', { credentials: 'include' })
-        if (fuRes.ok) {
-          const fuData = await fuRes.json()
-          setActiveFollowUps(fuData.followUps || [])
-        }
-      } catch (e) {
-        console.error('Dashboard load error:', e)
+      }))
+      // Also fetch follow-ups for the week
+      const res = await fetch('/api/daily-tasks/calendar/manual', { credentials: 'include' })
+      if (res.ok) {
+        const data = await res.json()
+        setFollowUps(data.tasks || [])
       }
-      setLoading(false)
+      // Fetch all active follow-ups for the action items section
+      const fuRes = await fetch('/api/daily-tasks/follow-ups/active', { credentials: 'include' })
+      if (fuRes.ok) {
+        const fuData = await fuRes.json()
+        setActiveFollowUps(fuData.followUps || [])
+      }
+    } catch (e) {
+      console.error('Dashboard load error:', e)
     }
+    setLoading(false)
+  }, [setPageDataset])
+
+  useEffect(() => {
     loadAll()
-  }, [])
+  }, [loadAll])
+
+  // Auto-refresh when navigating back or tab becomes visible again
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        loadAll()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [loadAll])
 
   // Build week items from loaded data + follow-ups
   useEffect(() => {
