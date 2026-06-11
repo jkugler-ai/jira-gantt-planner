@@ -211,7 +211,7 @@ export default function CalendarPage() {
     }
   }
 
-  // Add NVIDIA holidays
+  // Add NVIDIA holidays (deduplicated)
   if (showHolidays && holidays.length > 0) {
     const currentYear = new Date().getFullYear()
     const filteredHolidays = holidays.filter(h => {
@@ -220,20 +220,45 @@ export default function CalendarPage() {
       return h.location === holidayLocation || h.title.includes('NVIDIA')
     })
 
+    // Group holidays by date+title to deduplicate NVIDIA Free Days and annotate country-specific ones
+    const holidayMap = new Map<string, { title: string; locations: Set<string>; isNvidiaFreeDay: boolean }>()
     for (const holiday of filteredHolidays) {
       const dates = parseHolidayDates(holiday.date, currentYear)
+      const isNvidiaFreeDay = /^NVIDIA Free Day/i.test(holiday.title)
       for (const dateStr of dates) {
-        events.push({
-          key: `holiday-${holiday.title}-${dateStr}`,
-          summary: holiday.title,
-          date: dateStr,
-          dateType: 'holiday',
-          issueType: 'Holiday',
-          status: holiday.type,
-          statusCategory: 'holiday',
-          assignee: holiday.location
-        })
+        const mapKey = `${dateStr}||${isNvidiaFreeDay ? 'NVIDIA Free Days' : holiday.title}`
+        if (!holidayMap.has(mapKey)) {
+          holidayMap.set(mapKey, {
+            title: isNvidiaFreeDay ? 'NVIDIA Free Days' : holiday.title,
+            locations: new Set(),
+            isNvidiaFreeDay
+          })
+        }
+        holidayMap.get(mapKey)!.locations.add(holiday.location)
       }
+    }
+
+    for (const [mapKey, entry] of holidayMap.entries()) {
+      const dateStr = mapKey.split('||')[0]
+      let displayTitle: string
+      if (entry.isNvidiaFreeDay) {
+        // Company-wide — show once without country
+        displayTitle = 'NVIDIA Free Days'
+      } else if (entry.locations.size === 1) {
+        displayTitle = `${entry.title} (${[...entry.locations][0]})`
+      } else {
+        displayTitle = entry.title
+      }
+      events.push({
+        key: `holiday-${entry.title}-${dateStr}`,
+        summary: displayTitle,
+        date: dateStr,
+        dateType: 'holiday',
+        issueType: 'Holiday',
+        status: 'Holiday',
+        statusCategory: 'holiday',
+        assignee: [...entry.locations].join(', ')
+      })
     }
   }
 
@@ -382,7 +407,7 @@ export default function CalendarPage() {
                                 dismiss(ev.key)
                               }
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 flex-shrink-0"
+                            className="text-gray-400 hover:text-red-500 flex-shrink-0 transition-colors"
                             title={`Hide ${ev.key}`}
                           >
                             <X className="w-2.5 h-2.5" />

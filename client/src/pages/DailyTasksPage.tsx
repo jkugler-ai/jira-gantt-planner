@@ -514,12 +514,12 @@ export default function DailyTasksPage() {
         </div>
       )}
 
-      {/* Overnight Changes Summary */}
+      {/* What's Changed */}
       {overnightChanges.length > 0 && lastLoadHoursAgo !== null && (
         <div className="mb-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
           <h3 className="text-sm font-bold text-purple-800 mb-2 flex items-center gap-2">
             <Sun className="w-4 h-4 text-purple-500" />
-            Changes since your last visit ({lastLoadHoursAgo}h ago)
+            What's Changed ({lastLoadHoursAgo}h since last refresh)
           </h3>
           <div className="space-y-1">
             {overnightChanges.map(change => (
@@ -558,7 +558,7 @@ export default function DailyTasksPage() {
       ) : (
         <div className="space-y-4">
           {/* Overnight Summary */}
-          <Section title="Overnight Summary" icon={<Sun className="w-4 h-4 text-amber-500" />} expanded={expandedSections.overnight} onToggle={() => toggleSection('overnight')} count={data.overnightSummary ? 1 : 0}>
+          <Section title="Notes & Summary" icon={<Sun className="w-4 h-4 text-amber-500" />} expanded={expandedSections.overnight} onToggle={() => toggleSection('overnight')} count={data.overnightSummary ? 1 : 0}>
             <textarea
               value={data.overnightSummary}
               onChange={e => { setData(prev => ({ ...prev, overnightSummary: e.target.value })); setDirty(true) }}

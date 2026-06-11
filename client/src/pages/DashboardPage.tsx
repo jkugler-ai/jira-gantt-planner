@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
 import { getDefaultQuery } from '../lib/savedQueries'
+import { useDismissed } from '../lib/useDismissed'
+import { DismissButton, DismissedPanel } from '../components/DismissControls'
 import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, ExternalLink, MessageSquare } from 'lucide-react'
 
 const PAGE_DEFAULTS: Record<string, string> = {
@@ -38,12 +40,13 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [followUps, setFollowUps] = useState<any[]>([])
   const [activeFollowUps, setActiveFollowUps] = useState<FollowUpItem[]>([])
+  const { dismissed, dismiss, restore, restoreAll } = useDismissed('dashboard')
 
 
-  const stories = pageDatasets['stories'] || []
-  const releases = pageDatasets['releases'] || []
-  const sprintGoals = pageDatasets['sprint-goals'] || []
-  const bugs = pageDatasets['bugs'] || []
+  const stories = (pageDatasets['stories'] || []).filter(i => !dismissed.includes(i.key))
+  const releases = (pageDatasets['releases'] || []).filter(i => !dismissed.includes(i.key))
+  const sprintGoals = (pageDatasets['sprint-goals'] || []).filter(i => !dismissed.includes(i.key))
+  const bugs = (pageDatasets['bugs'] || []).filter(i => !dismissed.includes(i.key))
 
   const today = new Date()
   const twoWeeksOut = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
@@ -54,7 +57,8 @@ export default function DashboardPage() {
     try {
       const pages = Object.keys(PAGE_DEFAULTS)
       await Promise.all(pages.map(async (pageId) => {
-        const jql = getDefaultQuery(pageId, PAGE_DEFAULTS[pageId])
+        const jql = getDefaultQuery(pageId, PAGE_DEFAULTS[pageId]) || PAGE_DEFAULTS[pageId]
+        if (!jql) return
         const res = await fetch(`/api/jira/query?jql=${encodeURIComponent(jql)}&maxResults=200`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
@@ -249,7 +253,8 @@ export default function DashboardPage() {
                   <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Summary</th>
                   <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Assignee</th>
                   <th className="text-left text-xs font-medium text-red-600 uppercase py-1 pr-3">Last Updated</th>
-                  <th className="text-right text-xs font-medium text-red-600 uppercase py-1">Late</th>
+                  <th className="text-right text-xs font-medium text-red-600 uppercase py-1 pr-3">Late</th>
+                  <th className="text-right text-xs font-medium text-red-600 uppercase py-1"></th>
                 </tr>
               </thead>
               <tbody>
@@ -272,7 +277,10 @@ export default function DashboardPage() {
                         <td className="py-1.5 pr-3 text-gray-700 truncate max-w-[300px]">{item.summary}</td>
                         <td className="py-1.5 pr-3 text-gray-600 whitespace-nowrap">{item.assignee || '\u2014'}</td>
                         <td className="py-1.5 pr-3 text-gray-500 whitespace-nowrap">{(item as any).updated || '\u2014'}</td>
-                        <td className="py-1.5 text-right text-red-600 font-bold whitespace-nowrap">{daysLate}d</td>
+                        <td className="py-1.5 pr-3 text-right text-red-600 font-bold whitespace-nowrap">{daysLate}d</td>
+                        <td className="py-1.5 text-right">
+                          <DismissButton ticketKey={item.key} onDismiss={dismiss} />
+                        </td>
                       </tr>
                     )
                   })}
@@ -403,7 +411,8 @@ export default function DashboardPage() {
                     <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Type</th>
                     <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Summary</th>
                     <th className="text-left text-xs font-medium text-gray-500 uppercase py-1.5 pr-3">Assignee</th>
-                    <th className="text-right text-xs font-medium text-purple-600 uppercase py-1.5">Due</th>
+                    <th className="text-right text-xs font-medium text-purple-600 uppercase py-1.5 pr-3">Due</th>
+                    <th className="text-right text-xs font-medium text-gray-500 uppercase py-1.5"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -424,7 +433,10 @@ export default function DashboardPage() {
                         <td className="py-1.5 pr-3 text-xs text-gray-400 whitespace-nowrap">{item.type || '\u2014'}</td>
                         <td className="py-1.5 pr-3 text-gray-700 truncate max-w-[300px]">{item.summary}</td>
                         <td className="py-1.5 pr-3 text-gray-600 whitespace-nowrap">{item.assignee || '\u2014'}</td>
-                        <td className="py-1.5 text-right text-purple-600 font-medium whitespace-nowrap">{item.dueDate}</td>
+                        <td className="py-1.5 pr-3 text-right text-purple-600 font-medium whitespace-nowrap">{item.dueDate}</td>
+                        <td className="py-1.5 text-right">
+                          <DismissButton ticketKey={item.key} onDismiss={dismiss} />
+                        </td>
                       </tr>
                     ))}
                 </tbody>
@@ -512,6 +524,9 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Dismissed Panel */}
+      <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
     </div>
   )
 }

@@ -18,7 +18,7 @@ export function DismissButton({ ticketKey, onDismiss }: DismissButtonProps) {
   return (
     <button
       onClick={handleClick}
-      className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-300 hover:text-red-500 transition-opacity"
+      className="p-0.5 text-gray-400 hover:text-red-500 transition-colors"
       title={`Hide ${ticketKey} from this view`}
     >
       <X className="w-3.5 h-3.5" />
