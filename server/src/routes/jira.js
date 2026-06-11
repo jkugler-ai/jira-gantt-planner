@@ -486,24 +486,62 @@ router.get('/nspect/lookup', requireAuth, async (req, res) => {
     const { nspectId } = req.query;
     if (!nspectId) return res.status(400).json({ error: 'nspectId is required' });
 
-    // Search for PLC Parent tickets containing the nSpect ID
-    const jql = `project = OMPE AND summary ~ "PLC Parent Task" AND summary ~ "${nspectId}" ORDER BY created DESC`;
-    const fields = 'summary,status,assignee,subtasks,issuelinks,description,fixVersions';
-    const searchRes = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=10&fields=${fields}`
-    );
+    // Also accept optional productName for name-based search fallback
+    const { nspectId, productName } = req.query;
+    if (!nspectId && !productName) return res.status(400).json({ error: 'nspectId or productName is required' });
 
-    let parents = searchRes.data.issues || [];
-    if (parents.length === 0) {
-      // Also try text search in case nSpect ID is in description or custom field
-      const altJql = `project = OMPE AND text ~ "${nspectId}" AND summary ~ "PLC Parent" ORDER BY created DESC`;
-      const altRes = await jiraRequest(req, 'GET',
-        `/search?jql=${encodeURIComponent(altJql)}&maxResults=10&fields=${fields}`
-      );
-      if ((altRes.data.issues || []).length === 0) {
-        return res.json({ found: false, nspectId, message: 'No PLC Parent ticket found for this nSpect ID' });
+    const fields = 'summary,status,assignee,subtasks,issuelinks,description,fixVersions';
+    let parents = [];
+
+    // Strategy 1: Search by nSpect ID in summary
+    if (nspectId) {
+      const jql1 = `project = OMPE AND summary ~ "PLC Parent Task" AND summary ~ "${nspectId}" ORDER BY created DESC`;
+      const res1 = await jiraRequest(req, 'GET', `/search?jql=${encodeURIComponent(jql1)}&maxResults=10&fields=${fields}`);
+      parents = res1.data.issues || [];
+    }
+
+    // Strategy 2: Full text search for nSpect ID
+    if (parents.length === 0 && nspectId) {
+      const jql2 = `project = OMPE AND text ~ "${nspectId}" AND summary ~ "PLC Parent" ORDER BY created DESC`;
+      const res2 = await jiraRequest(req, 'GET', `/search?jql=${encodeURIComponent(jql2)}&maxResults=10&fields=${fields}`);
+      parents = res2.data.issues || [];
+    }
+
+    // Strategy 3: Search by nSpect ID anywhere (without PLC Parent requirement)
+    if (parents.length === 0 && nspectId) {
+      const jql3 = `project = OMPE AND text ~ "${nspectId}" ORDER BY created DESC`;
+      const res3 = await jiraRequest(req, 'GET', `/search?jql=${encodeURIComponent(jql3)}&maxResults=10&fields=${fields}`);
+      // Filter to those with "PLC" or "Parent" in summary
+      const plcIssues = (res3.data.issues || []).filter(i => /plc|parent/i.test(i.fields.summary));
+      if (plcIssues.length > 0) parents = plcIssues;
+      else parents = res3.data.issues || []; // Take any match
+    }
+
+    // Strategy 4: Search by product/component name in PLC Parent summaries
+    if (parents.length === 0 && productName) {
+      // Extract key words from product name (remove common words)
+      const keywords = productName.replace(/[()\[\]]/g, '').split(/[\s,\-–—]+/).filter(w => w.length > 2 && !/^(the|and|for|api|apis|usd|storage|service|nvidia)$/i.test(w));
+      if (keywords.length > 0) {
+        const searchTerms = keywords.slice(0, 3).join(' ');
+        const jql4 = `project = OMPE AND summary ~ "PLC Parent" AND summary ~ "${searchTerms}" ORDER BY created DESC`;
+        const res4 = await jiraRequest(req, 'GET', `/search?jql=${encodeURIComponent(jql4)}&maxResults=10&fields=${fields}`);
+        parents = res4.data.issues || [];
       }
-      parents = altRes.data.issues;
+    }
+
+    // Strategy 5: Broader name search without "PLC Parent" requirement
+    if (parents.length === 0 && productName) {
+      const keywords = productName.replace(/[()\[\]]/g, '').split(/[\s,\-–—]+/).filter(w => w.length > 2);
+      if (keywords.length > 0) {
+        const searchTerms = keywords.slice(0, 3).join(' ');
+        const jql5 = `project = OMPE AND summary ~ "PLC" AND text ~ "${searchTerms}" ORDER BY created DESC`;
+        const res5 = await jiraRequest(req, 'GET', `/search?jql=${encodeURIComponent(jql5)}&maxResults=10&fields=${fields}`);
+        parents = res5.data.issues || [];
+      }
+    }
+
+    if (parents.length === 0) {
+      return res.json({ found: false, nspectId, message: 'No PLC Parent ticket found for this nSpect ID or product name' });
     }
 
     // Most recent parent first

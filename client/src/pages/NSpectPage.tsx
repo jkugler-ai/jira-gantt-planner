@@ -347,7 +347,8 @@ export default function NSpectPage() {
     // Try nSpect lookup first
     if (entry.nspectId && entry.nspectId.startsWith('NSPECT-')) {
       try {
-        const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
+        const params = new URLSearchParams({ nspectId: entry.nspectId, productName: entry.productName || '' })
+        const res = await fetch(`/api/jira/nspect/lookup?${params}`, { credentials: 'include' })
         if (res.ok) {
           const data = await res.json()
           if (data.found) {
@@ -411,7 +412,8 @@ export default function NSpectPage() {
       // Try nSpect ID lookup first
       if (entry.nspectId && entry.nspectId.startsWith('NSPECT-')) {
         try {
-          const res = await fetch(`/api/jira/nspect/lookup?nspectId=${encodeURIComponent(entry.nspectId)}`, { credentials: 'include' })
+          const params = new URLSearchParams({ nspectId: entry.nspectId, productName: entry.productName || '' })
+          const res = await fetch(`/api/jira/nspect/lookup?${params}`, { credentials: 'include' })
           if (res.ok) {
             const data = await res.json()
             if (data.found) {
