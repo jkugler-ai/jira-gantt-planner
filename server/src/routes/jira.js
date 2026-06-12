@@ -345,6 +345,106 @@ router.get('/issue/:key/links', requireAuth, async (req, res) => {
   }
 });
 
+// GET /api/jira/issue/:key/all-links - Get ALL issue links with types (for PLC Action Items)
+router.get('/issue/:key/all-links', requireAuth, async (req, res) => {
+  try {
+    const response = await jiraRequest(req, 'GET', `/issue/${req.params.key}?fields=issuelinks,subtasks,assignee,duedate,status,summary`);
+    const links = response.data.fields.issuelinks || [];
+    const subtasks = response.data.fields.subtasks || [];
+
+    // Parse ALL links with their type and direction
+    // Note: Jira issuelinks only include: key, fields.summary, fields.status, fields.priority, fields.issuetype
+    // We need assignee/duedate, so we'll batch-fetch those for linked issues
+    const linkedKeys = [];
+    const allLinks = links.map(l => {
+      if (l.outwardIssue) {
+        linkedKeys.push(l.outwardIssue.key);
+        return {
+          direction: 'outward',
+          typeName: l.type.name,
+          typeOutward: l.type.outward,
+          typeInward: l.type.inward,
+          key: l.outwardIssue.key,
+          summary: l.outwardIssue.fields.summary,
+          status: l.outwardIssue.fields.status?.name,
+          statusCategory: l.outwardIssue.fields.status?.statusCategory?.key,
+          type: l.outwardIssue.fields.issuetype?.name,
+          assignee: null, // will be filled from batch fetch
+          dueDate: null,
+        };
+      } else if (l.inwardIssue) {
+        linkedKeys.push(l.inwardIssue.key);
+        return {
+          direction: 'inward',
+          typeName: l.type.name,
+          typeOutward: l.type.outward,
+          typeInward: l.type.inward,
+          key: l.inwardIssue.key,
+          summary: l.inwardIssue.fields.summary,
+          status: l.inwardIssue.fields.status?.name,
+          statusCategory: l.inwardIssue.fields.status?.statusCategory?.key,
+          type: l.inwardIssue.fields.issuetype?.name,
+          assignee: null,
+          dueDate: null,
+        };
+      }
+      return null;
+    }).filter(Boolean);
+
+    // Batch fetch assignee + duedate for all linked issues
+    if (linkedKeys.length > 0) {
+      try {
+        const batchJql = `key in (${linkedKeys.join(',')})`;  
+        const batchRes = await jiraRequest(req, 'GET',
+          `/search?jql=${encodeURIComponent(batchJql)}&maxResults=${linkedKeys.length}&fields=assignee,duedate`
+        );
+        const assigneeMap = {};
+        for (const issue of (batchRes.data.issues || [])) {
+          assigneeMap[issue.key] = {
+            assignee: issue.fields.assignee?.displayName || 'Unassigned',
+            dueDate: issue.fields.duedate || null,
+          };
+        }
+        // Fill in assignee/dueDate on allLinks
+        for (const link of allLinks) {
+          if (assigneeMap[link.key]) {
+            link.assignee = assigneeMap[link.key].assignee;
+            link.dueDate = assigneeMap[link.key].dueDate;
+          } else {
+            link.assignee = 'Unassigned';
+          }
+        }
+      } catch (batchErr) {
+        console.warn('Batch fetch for assignees failed:', batchErr.message);
+        // Fill with defaults
+        for (const link of allLinks) {
+          if (!link.assignee) link.assignee = 'Unassigned';
+        }
+      }
+    }
+
+    // Extract by relationship type
+    const approvedBy = allLinks.filter(l => l.typeName === 'Approval' && l.direction === 'inward');
+    const blockedBy = allLinks.filter(l => l.typeName === 'Blocks' && l.direction === 'inward');
+    const contains = allLinks.filter(l => (l.typeName === 'Contains' || l.typeName === 'Epic-Story Link') && l.direction === 'outward');
+    const tests = allLinks.filter(l => (l.typeName === 'Testing' || l.typeName === 'Test') && l.direction === 'outward');
+    const finishedWith = allLinks.filter(l => l.typeName === 'Finish-to-Finish' || l.typeOutward === 'has to be finished together with');
+
+    const subs = subtasks.map(s => ({
+      key: s.key,
+      summary: s.fields.summary,
+      status: s.fields.status?.name,
+      statusCategory: s.fields.status?.statusCategory?.key,
+      type: s.fields.issuetype?.name,
+    }));
+
+    res.json({ allLinks, approvedBy, blockedBy, contains, tests, finishedWith, subtasks: subs });
+  } catch (err) {
+    console.error('All-links error:', err.response?.data || err.message);
+    res.status(err.response?.status || 500).json({ error: 'Failed to fetch all issue links' });
+  }
+});
+
 // GET /api/jira/query - Generic JQL query endpoint
 router.get('/query', requireAuth, async (req, res) => {
   try {

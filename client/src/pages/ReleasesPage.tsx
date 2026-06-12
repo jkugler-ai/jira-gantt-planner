@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Rocket, ChevronDown, ChevronRight, RefreshCw, Shield, FileText, TestTube, AlertTriangle, Table, Layers, X } from 'lucide-react'
+import { Rocket, ChevronDown, ChevronRight, RefreshCw, Shield, FileText, TestTube, AlertTriangle, Table, Layers, X, ClipboardList, User, Clock } from 'lucide-react'
 import { getDefaultQuery } from '../lib/savedQueries'
 import { useSavedQueries } from '../lib/savedQueries'
 import JqlDataPage from '../components/JqlDataPage'
@@ -16,6 +16,7 @@ interface JiraIssue {
   priority: string
   dueDate: string | null
   fixVersion: string | null
+  links?: any[]
 }
 
 interface PLCChild {
@@ -42,6 +43,30 @@ interface ReleaseGroup {
 
 const DEFAULT_JQL = 'project = OMPE AND issuetype = Release AND status != Done AND created >= -60d ORDER BY duedate ASC'
 
+const ACTION_ITEMS_JQL = '(project = ompe AND "Development Team" in ("Storage Infrastructure APIs", "USD Storage API", "Caching Services", Portal, ovstorage, ovpackage, "Legacy Nucleus") AND type = release AND (text ~ storage OR text ~ ovstorage OR text ~ ovpackage OR text ~ Hub OR text ~ "Client Library" OR text ~ "Web Portal" OR text ~ "Caches" OR text ~ "Cache" OR text ~ ovcontentcache OR text ~ ovderivedcache OR text ~ "Nucleus Migration" OR text ~ "connect sample" OR text ~ Nucleus) AND (statusCategory in ("To Do", "In Progress") OR (statusCategory = Done AND updated >= -3d))) OR (project = ompe and text ~ "OKAS 1." and "development team" = "kit app streaming" and type = release and statusCategory in ("To Do", "In Progress")) ORDER BY due ASC'
+
+interface ActionItem {
+  key: string
+  summary: string
+  status: string
+  statusCategory: string
+  assignee: string
+  dueDate: string | null
+  type: string
+  parentRelease: string
+  parentReleaseDue: string | null
+  plcParentKey: string
+}
+
+interface ReleaseActionGroup {
+  releaseKey: string
+  releaseSummary: string
+  releaseDue: string | null
+  releaseStatus: string
+  releaseStatusCategory: string
+  assigneeGroups: { assignee: string; items: ActionItem[] }[]
+}
+
 export default function ReleasesPage() {
   const [releases, setReleases] = useState<ReleaseGroup[]>([])
   const [loading, setLoading] = useState(false)
@@ -52,7 +77,7 @@ export default function ReleasesPage() {
   const { queries, save: saveQuery, remove: removeQuery } = useSavedQueries('releases')
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [saveQueryName, setSaveQueryName] = useState('')
-  const [viewMode, setViewMode] = useState<'grouped' | 'table'>('table')
+  const [viewMode, setViewMode] = useState<'grouped' | 'table' | 'action-items'>('table')
   const { dismissed, dismiss, restore, restoreAll } = useDismissed('releases')
 
   const fetchReleases = useCallback(async () => {
@@ -182,9 +207,16 @@ export default function ReleasesPage() {
           <Table className="w-4 h-4" />
           Table View
         </button>
+        <button
+          onClick={() => setViewMode('action-items')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition ${viewMode === 'action-items' ? 'bg-[#76B900] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+        >
+          <ClipboardList className="w-4 h-4" />
+          PLC Action Items
+        </button>
         <div className="ml-auto">
           <button
-            onClick={fetchReleases}
+            onClick={viewMode === 'action-items' ? () => {} : fetchReleases}
             disabled={loading}
             className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 text-sm font-medium text-gray-700 transition disabled:opacity-50"
             title="Refresh data from Jira"
@@ -195,7 +227,9 @@ export default function ReleasesPage() {
         </div>
       </div>
 
-      {viewMode === 'table' ? (
+      {viewMode === 'action-items' ? (
+        <PLCActionItemsView />
+      ) : viewMode === 'table' ? (
         <JqlDataPage
           pageId="releases-table"
           title=""
@@ -444,6 +478,342 @@ export default function ReleasesPage() {
       <DismissedPanel dismissed={dismissed} onRestore={restore} onRestoreAll={restoreAll} />
       </>
       )}
+    </div>
+  )
+}
+
+function PLCActionItemsView() {
+  const [releaseGroups, setReleaseGroups] = useState<ReleaseActionGroup[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [expandedReleases, setExpandedReleases] = useState<Set<string>>(new Set())
+
+  const fetchActionItems = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      // Step 1: Fetch release tickets
+      const res = await fetch(`/api/jira/query?jql=${encodeURIComponent(ACTION_ITEMS_JQL)}&maxResults=50`, { credentials: 'include' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to fetch releases')
+      }
+      const data = await res.json()
+      const releaseIssues: JiraIssue[] = data.issues
+
+      // Step 2: For each release, traverse links to find PLC/MVSB tickets and their children
+      const groups: ReleaseActionGroup[] = []
+
+      for (const release of releaseIssues) {
+        const actionItems: ActionItem[] = []
+
+        try {
+          // Get ALL links for this release
+          const relLinkRes = await fetch(`/api/jira/issue/${release.key}/all-links`, { credentials: 'include' })
+          if (!relLinkRes.ok) continue
+          const relLinkData = await relLinkRes.json()
+
+          // Find PLC initiatives that approve this release
+          const plcInitiatives = relLinkData.approvedBy || []
+          // Also include direct blockedBy items that look like PLC/MVSB
+          const directMVSBs = (relLinkData.blockedBy || []).filter((l: any) =>
+            l.summary?.includes('MVSB') || l.summary?.includes('L1') || l.type === 'PLC Pillar'
+          )
+
+          // Collect MVSB keys and direct action items
+          const mvsbKeys: string[] = directMVSBs.map((m: any) => m.key)
+          const plcInitKeys: string[] = plcInitiatives.map((p: any) => p.key)
+
+          // For each PLC initiative, get its links to find MVSB L1 tickets AND direct children
+          for (const plcKey of plcInitKeys) {
+            try {
+              const plcRes = await fetch(`/api/jira/issue/${plcKey}/all-links`, { credentials: 'include' })
+              if (!plcRes.ok) continue
+              const plcData = await plcRes.json()
+
+              // MVSB tickets that approve this PLC initiative
+              const mvsbTickets = plcData.approvedBy || []
+              for (const mvsb of mvsbTickets) {
+                if (!mvsbKeys.includes(mvsb.key)) mvsbKeys.push(mvsb.key)
+              }
+
+              // Also get direct 'contains' and 'tests' items (docs, QA tickets)
+              const directChildren = [...(plcData.contains || []), ...(plcData.tests || [])]
+              for (const child of directChildren) {
+                if (!actionItems.find(ai => ai.key === child.key)) {
+                  actionItems.push({
+                    key: child.key,
+                    summary: child.summary,
+                    status: child.status,
+                    statusCategory: child.statusCategory || 'indeterminate',
+                    assignee: child.assignee || 'Unassigned',
+                    dueDate: child.dueDate || null,
+                    type: child.type || 'Task',
+                    parentRelease: release.key,
+                    parentReleaseDue: release.dueDate,
+                    plcParentKey: plcKey,
+                  })
+                }
+              }
+            } catch (e) {
+              console.warn(`Failed to fetch PLC initiative ${plcKey}:`, e)
+            }
+          }
+
+          // For each MVSB ticket, get its blockers (the actual PLC action items)
+          for (const mvsbKey of mvsbKeys) {
+            try {
+              const mvsbRes = await fetch(`/api/jira/issue/${mvsbKey}/all-links`, { credentials: 'include' })
+              if (!mvsbRes.ok) continue
+              const mvsbData = await mvsbRes.json()
+
+              const blockers = mvsbData.blockedBy || []
+              for (const child of blockers) {
+                if (!actionItems.find(ai => ai.key === child.key)) {
+                  actionItems.push({
+                    key: child.key,
+                    summary: child.summary,
+                    status: child.status,
+                    statusCategory: child.statusCategory || 'indeterminate',
+                    assignee: child.assignee || 'Unassigned',
+                    dueDate: child.dueDate || null,
+                    type: child.type || 'Task',
+                    parentRelease: release.key,
+                    parentReleaseDue: release.dueDate,
+                    plcParentKey: mvsbKey,
+                  })
+                }
+              }
+            } catch (e) {
+              console.warn(`Failed to fetch MVSB ${mvsbKey}:`, e)
+            }
+          }
+
+          // Also include 'has to be finished together with' links from the release itself
+          const finishWith = relLinkData.finishedWith || []
+          for (const item of finishWith) {
+            if (!actionItems.find(ai => ai.key === item.key)) {
+              actionItems.push({
+                key: item.key,
+                summary: item.summary,
+                status: item.status,
+                statusCategory: item.statusCategory || 'indeterminate',
+                assignee: item.assignee || 'Unassigned',
+                dueDate: item.dueDate || null,
+                type: item.type || 'Task',
+                parentRelease: release.key,
+                parentReleaseDue: release.dueDate,
+                plcParentKey: release.key,
+              })
+            }
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch links for release ${release.key}:`, e)
+        }
+
+        // Deduplicate by key
+        const uniqueItems = Array.from(new Map(actionItems.map(i => [i.key, i])).values())
+
+        // Group by assignee
+        const assigneeMap = new Map<string, ActionItem[]>()
+        for (const item of uniqueItems) {
+          const existing = assigneeMap.get(item.assignee) || []
+          existing.push(item)
+          assigneeMap.set(item.assignee, existing)
+        }
+
+        // Sort assignees alphabetically, but put 'Unassigned' last
+        const assigneeGroups = Array.from(assigneeMap.entries())
+          .sort(([a], [b]) => {
+            if (a === 'Unassigned') return 1
+            if (b === 'Unassigned') return -1
+            return a.localeCompare(b)
+          })
+          .map(([assignee, items]) => ({ assignee, items }))
+
+        if (uniqueItems.length > 0) {
+          groups.push({
+            releaseKey: release.key,
+            releaseSummary: release.summary,
+            releaseDue: release.dueDate,
+            releaseStatus: release.status,
+            releaseStatusCategory: release.statusCategory,
+            assigneeGroups,
+          })
+        }
+      }
+
+      setReleaseGroups(groups)
+      // Auto-expand all releases
+      setExpandedReleases(new Set(groups.map(g => g.releaseKey)))
+    } catch (e: any) {
+      setError(e.message || 'Unknown error')
+    }
+    setLoading(false)
+  }, [])
+
+  useEffect(() => {
+    fetchActionItems()
+  }, [])
+
+  const toggleRelease = (key: string) => {
+    setExpandedReleases(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key); else next.add(key)
+      return next
+    })
+  }
+
+  // Calculate summary stats
+  const allItems = releaseGroups.flatMap(rg => rg.assigneeGroups.flatMap(ag => ag.items))
+  const today = new Date().toISOString().split('T')[0]
+  const threeDaysFromNow = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const openItems = allItems.filter(i => i.statusCategory !== 'done' && i.status !== 'Security Signed-off')
+  const overdueItems = openItems.filter(i => {
+    const due = i.dueDate || i.parentReleaseDue
+    return due && due <= today
+  })
+  const dueSoonItems = openItems.filter(i => {
+    const due = i.dueDate || i.parentReleaseDue
+    return due && due > today && due <= threeDaysFromNow
+  })
+
+  function getReleaseBorderColor(dueDate: string | null): string {
+    if (!dueDate) return 'border-gray-200'
+    if (dueDate <= today) return 'border-red-300 bg-red-50/30'
+    if (dueDate <= threeDaysFromNow) return 'border-amber-300 bg-amber-50/30'
+    return 'border-gray-200'
+  }
+
+  function isDone(item: ActionItem): boolean {
+    return item.statusCategory === 'done' || item.status === 'Security Signed-off' || item.status === 'Closed' || item.status === 'Done' || item.status === 'Exception Granted'
+  }
+
+  return (
+    <div>
+      {/* Summary Banner */}
+      {!loading && releaseGroups.length > 0 && (
+        <div className="mb-4 p-3 bg-white border border-gray-200 rounded-lg flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-5 h-5 text-[#76B900]" />
+            <span className="text-sm font-semibold text-gray-900">{openItems.length} items need attention</span>
+          </div>
+          {overdueItems.length > 0 && (
+            <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full font-medium">
+              {overdueItems.length} overdue
+            </span>
+          )}
+          {dueSoonItems.length > 0 && (
+            <span className="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded-full font-medium">
+              {dueSoonItems.length} due within 3 days
+            </span>
+          )}
+          <button
+            onClick={fetchActionItems}
+            disabled={loading}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg text-sm text-gray-700 hover:bg-gray-200 transition disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
+      )}
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4" />
+          {error}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center gap-3 text-gray-500 py-8">
+          <RefreshCw className="w-5 h-5 animate-spin" />
+          <span>Loading PLC action items across releases...</span>
+        </div>
+      )}
+
+      {!loading && releaseGroups.length === 0 && !error && (
+        <div className="text-gray-400 text-sm py-8 text-center">No PLC action items found.</div>
+      )}
+
+      {/* Release Groups */}
+      <div className="space-y-4">
+        {releaseGroups.map(rg => (
+          <div key={rg.releaseKey} className={`bg-white border rounded-xl overflow-hidden ${getReleaseBorderColor(rg.releaseDue)}`}>
+            {/* Release Header */}
+            <div
+              className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50/50 transition"
+              onClick={() => toggleRelease(rg.releaseKey)}
+            >
+              {expandedReleases.has(rg.releaseKey) ? <ChevronDown className="w-4 h-4 text-gray-400" /> : <ChevronRight className="w-4 h-4 text-gray-400" />}
+              <Rocket className="w-4 h-4 text-[#76B900]" />
+              <a href={`https://jirasw.nvidia.com/browse/${rg.releaseKey}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] font-medium hover:underline text-sm" onClick={e => e.stopPropagation()}>
+                {rg.releaseKey}
+              </a>
+              <span className="font-semibold text-gray-900">{rg.releaseSummary}</span>
+              <StatusBadge status={rg.releaseStatus} category={rg.releaseStatusCategory} />
+              {rg.releaseDue && (
+                <span className={`text-xs ml-auto flex items-center gap-1 ${rg.releaseDue <= today ? 'text-red-600 font-bold' : rg.releaseDue <= threeDaysFromNow ? 'text-amber-600 font-medium' : 'text-gray-500'}`}>
+                  <Clock className="w-3 h-3" />
+                  Due: {rg.releaseDue}
+                </span>
+              )}
+              {/* Count badge */}
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-600">
+                {rg.assigneeGroups.reduce((sum, ag) => sum + ag.items.filter(i => !isDone(i)).length, 0)} open
+              </span>
+            </div>
+
+            {/* Expanded: Assignee groups */}
+            {expandedReleases.has(rg.releaseKey) && (
+              <div className="border-t border-gray-100 px-5 py-4 space-y-4">
+                {rg.assigneeGroups.map(ag => {
+                  const openCount = ag.items.filter(i => !isDone(i)).length
+                  const doneCount = ag.items.filter(i => isDone(i)).length
+                  return (
+                    <div key={ag.assignee} className="">
+                      {/* Assignee Header */}
+                      <div className="flex items-center gap-2 mb-2 pb-1 border-b border-gray-100">
+                        <User className="w-3.5 h-3.5 text-gray-400" />
+                        <span className="text-sm font-bold text-gray-800">{ag.assignee}</span>
+                        {openCount > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+                            {openCount} open
+                          </span>
+                        )}
+                        {doneCount > 0 && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">
+                            {doneCount} done
+                          </span>
+                        )}
+                      </div>
+                      {/* Items */}
+                      <div className="space-y-1 ml-5">
+                        {ag.items.map(item => (
+                          <div key={item.key} className={`flex items-center gap-2 text-sm px-2 py-1.5 rounded transition ${isDone(item) ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+                            {isDone(item) && <span className="text-green-500 text-xs">✓</span>}
+                            <a href={`https://jirasw.nvidia.com/browse/${item.key}`} target="_blank" rel="noopener noreferrer" className="text-[#76B900] font-medium hover:underline text-xs whitespace-nowrap">
+                              {item.key}
+                            </a>
+                            <span className={`text-gray-700 truncate ${isDone(item) ? 'line-through' : ''}`}>{item.summary}</span>
+                            <StatusBadge status={item.status} category={item.statusCategory} small />
+                            {item.dueDate && (
+                              <span className={`text-[10px] whitespace-nowrap ${item.dueDate <= today ? 'text-red-600 font-bold' : 'text-gray-400'}`}>
+                                {item.dueDate}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
