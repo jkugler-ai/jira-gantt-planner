@@ -38,9 +38,10 @@ app.use('/api/jira', jiraRoutes);
 app.use('/api/daily-tasks', dailyTasksRoutes);
 app.use('/api/storage', storageRoutes);
 
-// Serve static frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../../client/dist'), {
+// Serve static frontend
+const clientDist = path.join(__dirname, '../../client/dist');
+if (require('fs').existsSync(clientDist)) {
+  app.use(express.static(clientDist, {
     etag: false,
     setHeaders: (res, filePath) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -49,8 +50,9 @@ if (process.env.NODE_ENV === 'production') {
     }
   }));
   app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
+    res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
 
