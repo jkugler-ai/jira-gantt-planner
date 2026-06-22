@@ -151,7 +151,7 @@ export default function DashboardPage() {
   // All items combined for stats
   const allLoaded = [...stories, ...releases, ...sprintGoals, ...bugs]
   const totalItems = allLoaded.length
-  const isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || /^(done|released|closed|resolved)$/i.test(i.status)
+  const isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || ['done','released','closed','resolved'].includes((i.status || '').toLowerCase())
   const done = allLoaded.filter(i => isCompleted(i))
   const inProgress = allLoaded.filter(i => i.statusCategory === 'indeterminate')
   const toDo = allLoaded.filter(i => i.statusCategory === 'new')

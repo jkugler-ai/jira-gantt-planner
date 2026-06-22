@@ -28,32 +28,30 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <ErrorBoundary>
     <BrowserRouter>
       <AuthProvider>
         <FilterProvider>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-              <Route index element={<DashboardPage />} />
-              <Route path="stories" element={<StoriesPage />} />
-              <Route path="sprint-goals" element={<SprintGoalsPage />} />
-              <Route path="releases" element={<ReleasesPage />} />
-              <Route path="bugs" element={<BugsPage />} />
-              <Route path="gantt" element={<GanttPage />} />
-              <Route path="calendar" element={<CalendarPage />} />
-              <Route path="dependencies" element={<DependencyGraphPage />} />
-              <Route path="email" element={<EmailGeneratorPage />} />
-              <Route path="daily-tasks" element={<DailyTasksPage />} />
-              <Route path="links" element={<LinksPage />} />
-              <Route path="nspect" element={<NSpectPage />} />
-              <Route path="changelog" element={<ChangeLogPage />} />
+              <Route index element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
+              <Route path="stories" element={<ErrorBoundary><StoriesPage /></ErrorBoundary>} />
+              <Route path="sprint-goals" element={<ErrorBoundary><SprintGoalsPage /></ErrorBoundary>} />
+              <Route path="releases" element={<ErrorBoundary><ReleasesPage /></ErrorBoundary>} />
+              <Route path="bugs" element={<ErrorBoundary><BugsPage /></ErrorBoundary>} />
+              <Route path="gantt" element={<ErrorBoundary><GanttPage /></ErrorBoundary>} />
+              <Route path="calendar" element={<ErrorBoundary><CalendarPage /></ErrorBoundary>} />
+              <Route path="dependencies" element={<ErrorBoundary><DependencyGraphPage /></ErrorBoundary>} />
+              <Route path="email" element={<ErrorBoundary><EmailGeneratorPage /></ErrorBoundary>} />
+              <Route path="daily-tasks" element={<ErrorBoundary><DailyTasksPage /></ErrorBoundary>} />
+              <Route path="links" element={<ErrorBoundary><LinksPage /></ErrorBoundary>} />
+              <Route path="nspect" element={<ErrorBoundary><NSpectPage /></ErrorBoundary>} />
+              <Route path="changelog" element={<ErrorBoundary><ChangeLogPage /></ErrorBoundary>} />
             </Route>
           </Routes>
         </FilterProvider>
       </AuthProvider>
     </BrowserRouter>
-    </ErrorBoundary>
   )
 }
 
