@@ -42,11 +42,12 @@ export default function DashboardPage() {
   const [activeFollowUps, setActiveFollowUps] = useState<FollowUpItem[]>([])
   const { dismissed, dismiss, restore, restoreAll } = useDismissed('dashboard')
 
+  const _isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || ['done','released','closed','resolved'].includes((i.status || '').toLowerCase())
 
-  const stories = (pageDatasets['stories'] || []).filter(i => !dismissed.includes(i.key))
-  const releases = (pageDatasets['releases'] || []).filter(i => !dismissed.includes(i.key))
-  const sprintGoals = (pageDatasets['sprint-goals'] || []).filter(i => !dismissed.includes(i.key))
-  const bugs = (pageDatasets['bugs'] || []).filter(i => !dismissed.includes(i.key))
+  const stories = (pageDatasets['stories'] || []).filter(i => !dismissed.includes(i.key) && !_isCompleted(i))
+  const releases = (pageDatasets['releases'] || []).filter(i => !dismissed.includes(i.key) && !_isCompleted(i))
+  const sprintGoals = (pageDatasets['sprint-goals'] || []).filter(i => !dismissed.includes(i.key) && !_isCompleted(i))
+  const bugs = (pageDatasets['bugs'] || []).filter(i => !dismissed.includes(i.key) && !_isCompleted(i))
 
   const today = new Date()
   const twoWeeksOut = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
