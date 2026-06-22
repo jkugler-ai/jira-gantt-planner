@@ -41,7 +41,7 @@ export default function ChangeLogPage() {
       const teamFilter = `AND ("Development Team" in ("Storage Infrastructure APIs", "USD Storage API", "Caching Services", Portal, ovstorage, ovpackage) OR assignee = currentUser() OR cf[12712] = currentUser())`
 
       // Get items updated in the timeframe
-      const updatedJql = `project = OMPE AND updated >= "${sinceDate}" AND status != Done ${teamFilter} ORDER BY updated DESC`
+      const updatedJql = `project = OMPE AND updated >= "${sinceDate}" AND statusCategory != Done ${teamFilter} ORDER BY updated DESC`
       const updatedRes = await axios.get('/api/jira/query', { params: { jql: updatedJql } })
       const updatedIssues = updatedRes.data.issues || []
 

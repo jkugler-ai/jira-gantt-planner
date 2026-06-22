@@ -12,6 +12,7 @@ interface JiraIssue {
   type: string
   status: string
   statusCategory: string
+  resolution?: string | null
   assignee: string
   priority: string
   dueDate: string | null
@@ -41,7 +42,7 @@ interface ReleaseGroup {
   otherTickets: JiraIssue[]
 }
 
-const DEFAULT_JQL = 'project = OMPE AND issuetype = Release AND status != Done AND created >= -60d ORDER BY duedate ASC'
+const DEFAULT_JQL = 'project = OMPE AND issuetype = Release AND statusCategory != Done AND created >= -60d ORDER BY duedate ASC'
 
 const ACTION_ITEMS_JQL = '(project = ompe AND "Development Team" in ("Storage Infrastructure APIs", "USD Storage API", "Caching Services", Portal, ovstorage, ovpackage, "Legacy Nucleus") AND type = release AND (text ~ storage OR text ~ ovstorage OR text ~ ovpackage OR text ~ Hub OR text ~ "Client Library" OR text ~ "Web Portal" OR text ~ "Caches" OR text ~ "Cache" OR text ~ ovcontentcache OR text ~ ovderivedcache OR text ~ "Nucleus Migration" OR text ~ "connect sample" OR text ~ Nucleus) AND (statusCategory in ("To Do", "In Progress") OR (statusCategory = Done AND updated >= -3d))) OR (project = ompe and text ~ "OKAS 1." and "development team" = "kit app streaming" and type = release and statusCategory in ("To Do", "In Progress")) ORDER BY due ASC'
 
@@ -344,7 +345,7 @@ export default function ReleasesPage() {
               {/* Open/total summary when collapsed */}
               {!expandedReleases.has(rg.release.key) && (() => {
                 const allItems = [...rg.plcGroups.map(p => p.parent), ...rg.qaTickets, ...rg.docsTickets, ...rg.otherTickets]
-                const openCount = allItems.filter(i => i.statusCategory !== 'done' && i.status !== 'Closed' && i.status !== 'Done').length
+                const openCount = allItems.filter(i => i.statusCategory !== 'done' && !i.resolution).length
                 const totalCount = allItems.length
                 const colorClass = openCount === 0 ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
                 return totalCount > 0 ? (

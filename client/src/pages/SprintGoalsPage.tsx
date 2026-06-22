@@ -6,7 +6,7 @@ export default function SprintGoalsPage() {
       pageId="sprint-goals"
       title="Sprint Goals"
       subtitle="High-level sprint objectives and progress"
-      defaultJql='project = OMPE AND issuetype = "Sprint Goal" AND status != Done AND created >= -60d ORDER BY cf[13210] ASC, priority ASC'
+      defaultJql='project = OMPE AND issuetype = "Sprint Goal" AND statusCategory != Done AND created >= -60d ORDER BY cf[13210] ASC, priority ASC'
       extraColumns={['statusUpdate', 'staleness']}
     />
   )

@@ -30,6 +30,7 @@ interface JiraIssue {
   type?: string
   status: string
   statusCategory: string
+  resolution?: string | null
   assignee: string
   assigneeKey: string
   priority: string
@@ -752,7 +753,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
           const fv = issue.fixVersion || 'No Fix Version'
           if (!versionMap[fv]) versionMap[fv] = { open: 0, total: 0 }
           versionMap[fv].total++
-          if (issue.statusCategory !== 'done' && issue.status !== 'Done' && issue.status !== 'Closed') {
+          if (issue.statusCategory !== 'done' && !issue.resolution) {
             versionMap[fv].open++
           }
         }
@@ -835,7 +836,7 @@ export default function JqlDataPage({ pageId, title, subtitle, defaultJql, extra
                   if (showFixVersionSummary && currentFv !== lastFixVersion) {
                     lastFixVersion = currentFv
                     const groupIssues = sortedIssues.filter(i => (i.fixVersion || 'No Fix Version') === currentFv)
-                    const openCount = groupIssues.filter(i => i.statusCategory !== 'done' && i.status !== 'Done' && i.status !== 'Closed').length
+                    const openCount = groupIssues.filter(i => i.statusCategory !== 'done' && !i.resolution).length
                     const totalCount = groupIssues.length
                     groupHeader = (
                       <tr key={`group-${currentFv}`} className="bg-gray-100 border-b border-gray-200">

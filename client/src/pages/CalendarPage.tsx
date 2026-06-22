@@ -91,7 +91,7 @@ export default function CalendarPage() {
   useEffect(() => {
     if (activeDataset.length === 0 && !autoLoading) {
       setAutoLoading(true)
-      const defaultJql = getDefaultQuery('stories', 'project = OMPE AND issuetype in (Story, "Sprint Goal", Release, Bug) AND (duedate is not EMPTY OR "Start date" is not EMPTY) AND status != Done ORDER BY duedate ASC')
+      const defaultJql = getDefaultQuery('stories', 'project = OMPE AND issuetype in (Story, "Sprint Goal", Release, Bug) AND (duedate is not EMPTY OR "Start date" is not EMPTY) AND statusCategory != Done ORDER BY duedate ASC')
       axios.get('/api/jira/query', { params: { jql: defaultJql } })
         .then(res => {
           if (res.data.issues && res.data.issues.length > 0) {
@@ -105,7 +105,7 @@ export default function CalendarPage() {
 
   function handleRefresh() {
     setAutoLoading(true)
-    const defaultJql = getDefaultQuery('stories', 'project = OMPE AND issuetype in (Story, "Sprint Goal", Release, Bug) AND (duedate is not EMPTY OR "Start date" is not EMPTY) AND status != Done ORDER BY duedate ASC')
+    const defaultJql = getDefaultQuery('stories', 'project = OMPE AND issuetype in (Story, "Sprint Goal", Release, Bug) AND (duedate is not EMPTY OR "Start date" is not EMPTY) AND statusCategory != Done ORDER BY duedate ASC')
     axios.get('/api/jira/query', { params: { jql: defaultJql, refresh: 'true' } })
       .then(res => {
         if (res.data.issues && res.data.issues.length > 0) {
