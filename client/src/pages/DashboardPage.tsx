@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
+import { getDefaultQuery } from '../lib/savedQueries'
 import { useDismissed } from '../lib/useDismissed'
 import { DismissButton, DismissedPanel } from '../components/DismissControls'
 import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, ExternalLink, MessageSquare } from 'lucide-react'
@@ -56,7 +57,9 @@ export default function DashboardPage() {
     try {
       const pages = Object.keys(PAGE_DEFAULTS)
       await Promise.all(pages.map(async (pageId) => {
-        const jql = PAGE_DEFAULTS[pageId]
+        const savedJql = getDefaultQuery(pageId, PAGE_DEFAULTS[pageId]) || PAGE_DEFAULTS[pageId]
+        // Ensure completed items are always excluded regardless of saved query
+        const jql = savedJql.replace(/AND\s+status\s*!=\s*Done/i, 'AND statusCategory != Done').replace(/AND\s+status\s+NOT\s+IN\s*\([^)]+\)/i, 'AND statusCategory != Done')
         if (!jql) return
         const res = await fetch(`/api/jira/query?jql=${encodeURIComponent(jql)}&maxResults=200`, { credentials: 'include' })
         if (res.ok) {
