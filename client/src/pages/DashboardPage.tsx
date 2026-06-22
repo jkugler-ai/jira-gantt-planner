@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useFilterContext } from '../context/FilterContext'
 import type { FilteredIssue } from '../context/FilterContext'
-import { getDefaultQuery } from '../lib/savedQueries'
 import { useDismissed } from '../lib/useDismissed'
 import { DismissButton, DismissedPanel } from '../components/DismissControls'
 import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, ExternalLink, MessageSquare } from 'lucide-react'
@@ -57,7 +56,7 @@ export default function DashboardPage() {
     try {
       const pages = Object.keys(PAGE_DEFAULTS)
       await Promise.all(pages.map(async (pageId) => {
-        const jql = getDefaultQuery(pageId, PAGE_DEFAULTS[pageId]) || PAGE_DEFAULTS[pageId]
+        const jql = PAGE_DEFAULTS[pageId]
         if (!jql) return
         const res = await fetch(`/api/jira/query?jql=${encodeURIComponent(jql)}&maxResults=200`, { credentials: 'include' })
         if (res.ok) {
@@ -149,11 +148,12 @@ export default function DashboardPage() {
   // All items combined for stats
   const allLoaded = [...stories, ...releases, ...sprintGoals, ...bugs]
   const totalItems = allLoaded.length
-  const done = allLoaded.filter(i => i.statusCategory === 'done' || !!i.resolution)
+  const done = allLoaded.filter(i => isCompleted(i))
   const inProgress = allLoaded.filter(i => i.statusCategory === 'indeterminate')
   const toDo = allLoaded.filter(i => i.statusCategory === 'new')
-  const overdue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) < today && i.statusCategory !== 'done' && !i.resolution)
-  const upcomingDue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) >= today && new Date(i.dueDate) <= twoWeeksOut && i.statusCategory !== 'done' && !i.resolution)
+  const isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || /^(done|released|closed|resolved)$/i.test(i.status)
+  const overdue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) < today && !isCompleted(i))
+  const upcomingDue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) >= today && new Date(i.dueDate) <= twoWeeksOut && !isCompleted(i))
 
   // Health
   const totalActive = inProgress.length + toDo.length
