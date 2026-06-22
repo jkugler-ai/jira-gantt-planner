@@ -42,7 +42,10 @@ export default function DashboardPage() {
   const [activeFollowUps, setActiveFollowUps] = useState<FollowUpItem[]>([])
   const { dismissed, dismiss, restore, restoreAll } = useDismissed('dashboard')
 
-  const _isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || ['done','released','closed','resolved'].includes((i.status || '').toLowerCase())
+  const _isCompleted = (i: any) => {
+    if (!i) return false
+    return i.statusCategory === 'done' || !!i.resolution || ['done','released','closed','resolved'].includes((i.status || '').toLowerCase())
+  }
 
   const stories = (pageDatasets['stories'] || []).filter(i => !dismissed.includes(i.key) && !_isCompleted(i))
   const releases = (pageDatasets['releases'] || []).filter(i => !dismissed.includes(i.key) && !_isCompleted(i))
