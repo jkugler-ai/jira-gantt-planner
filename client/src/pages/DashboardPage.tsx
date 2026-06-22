@@ -7,10 +7,10 @@ import { DismissButton, DismissedPanel } from '../components/DismissControls'
 import { GanttChart, Calendar, AlertTriangle, CheckCircle, Clock, Bug, RefreshCw, ExternalLink, MessageSquare } from 'lucide-react'
 
 const PAGE_DEFAULTS: Record<string, string> = {
-  stories: 'project = OMPE AND issuetype = Story AND status != Done ORDER BY cf[13210] ASC, priority ASC',
-  releases: 'project = OMPE AND issuetype = Release AND status != Done ORDER BY duedate ASC',
-  'sprint-goals': 'project = OMPE AND issuetype = "Sprint Goal" AND status != Done ORDER BY cf[13210] ASC, priority ASC',
-  bugs: 'project = OMPE AND issuetype = Bug AND status != Done ORDER BY priority ASC, created DESC',
+  stories: 'project = OMPE AND issuetype = Story AND statusCategory != Done ORDER BY cf[13210] ASC, priority ASC',
+  releases: 'project = OMPE AND issuetype = Release AND statusCategory != Done ORDER BY duedate ASC',
+  'sprint-goals': 'project = OMPE AND issuetype = "Sprint Goal" AND statusCategory != Done ORDER BY cf[13210] ASC, priority ASC',
+  bugs: 'project = OMPE AND issuetype = Bug AND statusCategory != Done ORDER BY priority ASC, created DESC',
 }
 
 interface WeekItem {
