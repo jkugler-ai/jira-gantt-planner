@@ -148,10 +148,10 @@ export default function DashboardPage() {
   // All items combined for stats
   const allLoaded = [...stories, ...releases, ...sprintGoals, ...bugs]
   const totalItems = allLoaded.length
+  const isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || /^(done|released|closed|resolved)$/i.test(i.status)
   const done = allLoaded.filter(i => isCompleted(i))
   const inProgress = allLoaded.filter(i => i.statusCategory === 'indeterminate')
   const toDo = allLoaded.filter(i => i.statusCategory === 'new')
-  const isCompleted = (i: any) => i.statusCategory === 'done' || !!i.resolution || /^(done|released|closed|resolved)$/i.test(i.status)
   const overdue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) < today && !isCompleted(i))
   const upcomingDue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) >= today && new Date(i.dueDate) <= twoWeeksOut && !isCompleted(i))
 
