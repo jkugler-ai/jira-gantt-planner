@@ -74,7 +74,7 @@ router.get('/sprint-goals', requireAuth, async (req, res) => {
     }
 
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuelinks,customfield_10015&expand=names`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=${maxResults}&fields=summary,status,resolution,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuelinks,customfield_10015&expand=names`
     );
 
     const goals = response.data.issues.map(issue => ({
@@ -82,6 +82,7 @@ router.get('/sprint-goals', requireAuth, async (req, res) => {
       summary: issue.fields.summary,
       status: issue.fields.status?.name,
       statusCategory: issue.fields.status?.statusCategory?.key,
+      resolution: issue.fields.resolution?.name || null,
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
       assigneeKey: issue.fields.assignee?.key,
       priority: issue.fields.priority?.name,
@@ -114,7 +115,7 @@ router.get('/children/:key', requireAuth, async (req, res) => {
     const jql = `project = OMPE AND "Parent Link" = ${parentKey} ORDER BY cf[13210] ASC, priority ASC, created ASC`;
 
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuetype,issuelinks,customfield_10015`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,resolution,assignee,priority,duedate,created,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,issuetype,issuelinks,customfield_10015`
     );
 
     const children = response.data.issues.map(issue => ({
@@ -123,6 +124,7 @@ router.get('/children/:key', requireAuth, async (req, res) => {
       type: issue.fields.issuetype?.name,
       status: issue.fields.status?.name,
       statusCategory: issue.fields.status?.statusCategory?.key,
+      resolution: issue.fields.resolution?.name || null,
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
       assigneeKey: issue.fields.assignee?.key,
       priority: issue.fields.priority?.name,
@@ -200,7 +202,7 @@ router.get('/gantt-data', requireAuth, async (req, res) => {
     }
 
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=500&fields=summary,status,assignee,priority,duedate,issuetype,issuelinks,customfield_10015,customfield_14311,customfield_37300`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=500&fields=summary,status,resolution,assignee,priority,duedate,issuetype,issuelinks,customfield_10015,customfield_14311,customfield_37300`
     );
 
     const items = response.data.issues.map(issue => ({
@@ -209,6 +211,7 @@ router.get('/gantt-data', requireAuth, async (req, res) => {
       type: issue.fields.issuetype?.name,
       status: issue.fields.status?.name,
       statusCategory: issue.fields.status?.statusCategory?.key,
+      resolution: issue.fields.resolution?.name || null,
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
       assigneeKey: issue.fields.assignee?.key,
       startDate: issue.fields.customfield_10015,
@@ -465,7 +468,7 @@ router.get('/query', requireAuth, async (req, res) => {
     }
 
     const response = await jiraRequest(req, 'GET',
-      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,assignee,reporter,priority,duedate,created,updated,issuetype,fixVersions,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,customfield_23812,customfield_31509,customfield_35415,issuelinks,customfield_10015`
+      `/search?jql=${encodeURIComponent(jql)}&maxResults=200&fields=summary,status,resolution,assignee,reporter,priority,duedate,created,updated,issuetype,fixVersions,customfield_14311,customfield_37300,customfield_12711,customfield_12712,customfield_13210,customfield_23812,customfield_31509,customfield_35415,issuelinks,customfield_10015`
     );
 
     const issues = response.data.issues.map(issue => ({
@@ -474,6 +477,7 @@ router.get('/query', requireAuth, async (req, res) => {
       type: issue.fields.issuetype?.name,
       status: issue.fields.status?.name,
       statusCategory: issue.fields.status?.statusCategory?.key,
+      resolution: issue.fields.resolution?.name || null,
       assignee: issue.fields.assignee?.displayName || 'Unassigned',
       assigneeKey: issue.fields.assignee?.key,
       priority: issue.fields.priority?.name,

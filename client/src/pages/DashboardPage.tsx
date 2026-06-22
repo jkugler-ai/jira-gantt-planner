@@ -148,11 +148,11 @@ export default function DashboardPage() {
   // All items combined for stats
   const allLoaded = [...stories, ...releases, ...sprintGoals, ...bugs]
   const totalItems = allLoaded.length
-  const done = allLoaded.filter(i => i.statusCategory === 'done')
+  const done = allLoaded.filter(i => i.statusCategory === 'done' || !!i.resolution)
   const inProgress = allLoaded.filter(i => i.statusCategory === 'indeterminate')
   const toDo = allLoaded.filter(i => i.statusCategory === 'new')
-  const overdue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) < today && i.statusCategory !== 'done')
-  const upcomingDue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) >= today && new Date(i.dueDate) <= twoWeeksOut && i.statusCategory !== 'done')
+  const overdue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) < today && i.statusCategory !== 'done' && !i.resolution)
+  const upcomingDue = allLoaded.filter(i => i.dueDate && new Date(i.dueDate) >= today && new Date(i.dueDate) <= twoWeeksOut && i.statusCategory !== 'done' && !i.resolution)
 
   // Health
   const totalActive = inProgress.length + toDo.length

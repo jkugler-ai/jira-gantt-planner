@@ -7,6 +7,7 @@ export interface FilteredIssue {
   type?: string
   status: string
   statusCategory: string
+  resolution?: string | null
   assignee: string
   assigneeKey: string
   priority: string
